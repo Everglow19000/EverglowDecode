@@ -18,8 +18,8 @@ public class Shooter implements Subsystem {
     // --------------------
     // | Servo Parameters |
     // --------------------
-    private static double minServoPosition = 0.35;
-    private static double maxServoPosition = 0.62;
+    private static double minServoPosition = 0.39;
+    private static double maxServoPosition = 0.63;
     private static Servo.Direction servoDirection = Servo.Direction.REVERSE;
 
 

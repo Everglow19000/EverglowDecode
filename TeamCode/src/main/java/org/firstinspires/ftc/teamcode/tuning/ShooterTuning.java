@@ -18,8 +18,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.VoltageUnit;
 @Config
 public class ShooterTuning extends LinearOpMode {
 
-    public static double minPosition = 0.35;
-    public static double maxPosition = 0.62;
+    public static double minPosition = 0.39;
+    public static double maxPosition = 0.63;
     public static boolean servoFlipped = true;
     public static double currPos = 0;
     public static double wantedVoltage = 0;
