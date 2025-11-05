@@ -5,13 +5,19 @@ import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.teamcode.everglow_library.RobotBase;
+import org.firstinspires.ftc.teamcode.everglow_library.Subsystem;
+import org.firstinspires.ftc.teamcode.subsystems.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.Motif;
 
 public class Robot extends RobotBase {
 
     public static Motif currentMotif;
+    Intake intake;
     public Robot(HardwareMap hardwareMap) {
+        subsystems = new Subsystem[1];
         this.drive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
+        intake = new Intake(hardwareMap);
+        subsystems[0] = intake;
     }
     @Override
     public void update(int iterationCount) {
@@ -33,17 +39,17 @@ public class Robot extends RobotBase {
         return null;
     }
     public Action getStartIntakeAction() {
-        return null;
+        return intake.getStartIntakeAction();
     }
     public Action getStopIntakeAction() {
-        return null;
+        return intake.getStopIntakeAction();
     }
 
     public void startIntake(){ //start intake
-
+        intake.startIntake();
     }
     public void stopIntake(){ //stop intake
-
+        intake.stopIntake();
     }
 
     public void startBelt(){ //start belt

@@ -23,10 +23,17 @@ public abstract class RobotBase {
     // updates everything, including subsystems. intended for logging and the likes
     public abstract void update(int iterationCount);
 
+    public double squareKeepingSymbol(double num) {
+        if (num > 0) {
+            return num*num;
+        }
+        return -num*num;
+    }
+
     // moves the robot according to the gamepad input, and moves it without considering the heading if isAbsolute is true
     public void calculateDrivePowers(Gamepad gamepad, boolean isAbsolute) {
         Vector2d movement = new Vector2d(
-                Math.abs(Math.pow((-gamepad.left_stick_y)*(1.0/Math.pow(4.5, gamepad.right_trigger)), 2)),
+                squareKeepingSymbol((-gamepad.left_stick_y)*(1.0/Math.pow(4.5, gamepad.right_trigger))),
                 -gamepad.left_stick_x*(1.0/Math.pow(4, gamepad.right_trigger))
         );
 
