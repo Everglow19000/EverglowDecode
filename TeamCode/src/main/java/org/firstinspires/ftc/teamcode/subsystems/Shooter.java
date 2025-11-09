@@ -43,23 +43,29 @@ public class Shooter implements Subsystem {
     }
 
     public class StartUpShooterAction implements Action {
+        public final double step = 0.008;
+        private double currServoPos;
+        private final double servoDestination;
         private boolean hasStarted = false;
         private double givenDistanceFromGoal;
 
         private StartUpShooterAction(double distanceFromGoal) {
             this.givenDistanceFromGoal = distanceFromGoal;
+            servoDestination = getServoPositionForDistanceFromGoal(givenDistanceFromGoal);
         }
 
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
             if (!hasStarted) {
-                startMotorForDistanceFromGoal(givenDistanceFromGoal);
-                aimHoodForDistanceFromGoal(givenDistanceFromGoal);
+                flywheelMotor.setPower(getMotorVoltageForDistanceFromGoal(givenDistanceFromGoal));
+                currServoPos = hoodServo.getPosition();
 
                 hasStarted = true;
             }
+            currServoPos = Math.min(currServoPos + step, servoDestination);
+            hoodServo.setPosition(currServoPos);
 
-            return !isFlywheelFinishedSpinning();
+            return !(isFlywheelFinishedSpinning() && currServoPos == servoDestination);
         }
     }
 
@@ -85,16 +91,16 @@ public class Shooter implements Subsystem {
      * distance is given in meters, and is the distance from the robot's shooter to the goal.
      * @param distance
      */
-    public void startMotorForDistanceFromGoal(double distance) {
-        flywheelMotor.setPower(distance/maxDistanceFromGoal); //TODO: REMOVE THIS SINCE THIS IS A PLACEHOLDER
+    public double getMotorVoltageForDistanceFromGoal(double distance) {
+        return distance/maxDistanceFromGoal; //TODO: REMOVE THIS SINCE THIS IS A PLACEHOLDER
     }
 
     /**
      * distance is given in meters, and is the distance from the robot's shooter to the goal.
      * @param distance
      */
-    public void aimHoodForDistanceFromGoal(double distance) {
-        hoodServo.setPosition(distance/maxDistanceFromGoal); //TODO: REMOVE THIS SINCE THIS IS A PLACEHOLDER
+    public double getServoPositionForDistanceFromGoal(double distance) {
+        return distance/maxDistanceFromGoal; //TODO: REMOVE THIS SINCE THIS IS A PLACEHOLDER
     }
 
     public void stopMotor() {
