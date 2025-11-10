@@ -16,11 +16,46 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.teamcode.everglow_library.Subsystem;
 
 public class Camera implements Subsystem{
+    public class DetermineMotifAction implements Action {
+        private boolean hasStarted = false;
+        private boolean isFinished = false;
+        private Motif[] motifWrapper;
+        private double timeUntilBail;
+        private double startTime;
+        private DetermineMotifAction(double timeUntilBail, Motif[] motifWrapper) {
+            this.motifWrapper = motifWrapper;
+            this.timeUntilBail = timeUntilBail;
+        }
 
-    private class FindLocationAction implements Action{
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            if (!hasStarted) {
+                hasStarted = true;
+
+                startTime = System.currentTimeMillis();
+                limelight3A.pipelineSwitch(2);
+            }
+
+            LLResult result = limelight3A.getLatestResult();
+            if (result.isValid()) {
+                if (result.getFiducialResults().get(0) != null) {
+                    int discoveredId = result.getFiducialResults().get(0).getFiducialId();
+                    motifWrapper[0] = Motif.values()[discoveredId - 21];
+                    isFinished = true;
+                }
+            }
+
+            isFinished = (System.currentTimeMillis() - startTime) > timeUntilBail || isFinished;
+
+            return !isFinished;
+        }
+    }
+
+    public class FindLocationAction implements Action{
         private double[] location;
         private Pose3D[] locations;
         private int index = 0;
+        private boolean hasStarted = false;
 
         // location is a list of size 3 [x,y,heading]
         public FindLocationAction(double[] location, int amount) {
@@ -30,6 +65,11 @@ public class Camera implements Subsystem{
 
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            if (!hasStarted) {
+                hasStarted = true;
+
+                limelight3A.pipelineSwitch(1);
+            }
             LLResult result = limelight3A.getLatestResult();
             locations[index] = result.getBotpose();
             index++;
@@ -54,7 +94,10 @@ public class Camera implements Subsystem{
 
     public void start() {
         limelight3A.start();
-        limelight3A.pipelineSwitch(1);
+    }
+
+    public DetermineMotifAction getDetermineMotifAction(Motif[] motifWrapper) {
+        return new DetermineMotifAction(1.5, motifWrapper);
     }
 
     public FindLocationAction getFindLocationAction(double[] location, int amount) {
