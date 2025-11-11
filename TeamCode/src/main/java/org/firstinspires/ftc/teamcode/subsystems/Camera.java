@@ -97,7 +97,7 @@ public class Camera implements Subsystem{
     }
 
     public DetermineMotifAction getDetermineMotifAction(Motif[] motifWrapper) {
-        return new DetermineMotifAction(1.5, motifWrapper);
+        return new DetermineMotifAction(500.0, motifWrapper);
     }
 
     public FindLocationAction getFindLocationAction(double[] location, int amount) {
