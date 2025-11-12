@@ -4,22 +4,24 @@ import androidx.annotation.NonNull;
 
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.seattlesolvers.solverslib.hardware.motors.Motor;
+import com.seattlesolvers.solverslib.hardware.motors.MotorEx;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.everglow_library.Subsystem;
 
 public class Shooter implements Subsystem {
-    private static double maxDistanceFromGoal = 3; //TODO: REMOVE THIS SINCE THIS IS A PLACEHOLDER
+    private static double gravity = 9.81;
 
     // --------------------
     // | Servo Parameters |
     // --------------------
     private static double minServoPosition = 0.39;
     private static double maxServoPosition = 0.63;
+    private static double minServoAngle = 0.0698132;
+    private static double maxServoAngle = 0.872665;
     private static Servo.Direction servoDirection = Servo.Direction.REVERSE;
 
 
@@ -28,7 +30,8 @@ public class Shooter implements Subsystem {
     // -----------------------
     private static double goalHeight = 0.9843; // meters above the field of the lip of the goal
     private static double shooterHeight = 0.3; // meters above the field of artifact as it leaves shooter TODO: Change according to actual robot measurements
-    private static DcMotorSimple.Direction flywheelMotorDirection = DcMotorSimple.Direction.REVERSE;
+    private static boolean isFlywheelInverted = true;
+    private static double flywheelRadius = 0.048; // in meters
 
     public class StopShooterSpinAction implements Action {
         private StopShooterSpinAction() {
@@ -43,42 +46,54 @@ public class Shooter implements Subsystem {
     }
 
     public class StartUpShooterAction implements Action {
-        public final double step = 0.008;
-        private double currServoPos;
-        private final double servoDestination;
         private boolean hasStarted = false;
         private double givenDistanceFromGoal;
 
-        private StartUpShooterAction(double distanceFromGoal) {
+        private StartUpShooterAction(double distanceFromGoal, double shootingAngle) {
             this.givenDistanceFromGoal = distanceFromGoal;
-            servoDestination = getServoPositionForDistanceFromGoal(givenDistanceFromGoal);
+            desiredFlywheelSpeed = getFlywheelTicksPerSecondForArtifactVelocity(getArtifactVelocityForDistanceAndAngle(distanceFromGoal, shootingAngle));
         }
 
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
             if (!hasStarted) {
-                flywheelMotor.setPower(getMotorVoltageForDistanceFromGoal(givenDistanceFromGoal));
-                currServoPos = hoodServo.getPosition();
+                flywheelMotor.setVelocity(desiredFlywheelSpeed);
 
                 hasStarted = true;
             }
-            currServoPos = Math.min(currServoPos + step, servoDestination);
-            hoodServo.setPosition(currServoPos);
 
-            return !(isFlywheelFinishedSpinning() && currServoPos == servoDestination);
+            return !isFlywheelFinishedSpinning();
+        }
+    }
+
+    public class AimHoodAction implements Action {
+        private double targetPosition;
+        private double step = 0.008;
+
+        private AimHoodAction(double pos) {
+            targetPosition = pos;
+        }
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            setHoodServoPosition(Math.min(targetServoPos + step, targetPosition));
+
+            return targetServoPos != targetPosition;
         }
     }
 
 
-    DcMotorEx flywheelMotor;
+    MotorEx flywheelMotor;
     Servo hoodServo;
+    private double desiredFlywheelSpeed = 0; // [ticks/s]
+    private double targetServoPos = 0;
 
 
     public Shooter(HardwareMap hardwareMap) {
-        flywheelMotor = hardwareMap.get(DcMotorEx.class, "flyWheelMotor");
+        flywheelMotor = new MotorEx(hardwareMap, "flywheelMotor", Motor.GoBILDA.BARE);
 
-        flywheelMotor.setDirection(flywheelMotorDirection);
-        flywheelMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        flywheelMotor.setInverted(isFlywheelInverted);
+        flywheelMotor.setRunMode(Motor.RunMode.VelocityControl);
 
 
         hoodServo = hardwareMap.get(Servo.class, "hoodServo");
@@ -87,41 +102,64 @@ public class Shooter implements Subsystem {
         hoodServo.scaleRange(minServoPosition, maxServoPosition);
     }
 
-    /**
-     * distance is given in meters, and is the distance from the robot's shooter to the goal.
-     * @param distance
-     */
-    public double getMotorVoltageForDistanceFromGoal(double distance) {
-        return distance/maxDistanceFromGoal; //TODO: REMOVE THIS SINCE THIS IS A PLACEHOLDER
+    public static double getArtifactVelocityForDistanceAndAngle(double distance, double angle) {
+        //stolen from internet so might not be good
+        return Math.sqrt((gravity*Math.pow(distance, 2))/(2*Math.pow(Math.cos(angle), 2)*((distance*Math.tan(angle))-(goalHeight - shooterHeight))));
     }
 
-    /**
-     * distance is given in meters, and is the distance from the robot's shooter to the goal.
-     * @param distance
-     */
-    public double getServoPositionForDistanceFromGoal(double distance) {
-        return distance/maxDistanceFromGoal; //TODO: REMOVE THIS SINCE THIS IS A PLACEHOLDER
+    public double getFlywheelTicksPerSecondForArtifactVelocity(double artifactVelocity) {
+        return ((artifactVelocity/flywheelRadius)/2*Math.PI)/flywheelMotor.getCPR();
+    }
+
+    public void setFlywheelmotorSpeed(double ticksPerSecond) {
+        desiredFlywheelSpeed = ticksPerSecond;
+        flywheelMotor.setVelocity(ticksPerSecond);
+    }
+
+    public void setHoodServoAngle(double angle, AngleUnit unit) {
+        double wantedAngle = unit.toRadians(angle);
+        setHoodServoPosition((wantedAngle - minServoAngle)/(maxServoAngle - minServoAngle));
+    }
+
+    public void setHoodServoPosition(double pos) {
+        targetServoPos = pos;
+        hoodServo.setPosition(pos);
+    }
+
+    public double getHoodServoAngle() {
+        return targetServoPos*(maxServoAngle-minServoAngle) + minServoAngle;
+    }
+
+    public double getHoodServoPosition() {
+        return targetServoPos;
     }
 
     public void stopMotor() {
-        flywheelMotor.setPower(0);
+        flywheelMotor.stopMotor();
     }
 
     public boolean isFlywheelFinishedSpinning() {
-        return true;
+        return flywheelMotor.getCorrectedVelocity() - desiredFlywheelSpeed <= 10;
     }
 
     public StopShooterSpinAction getStopShooterSpinAction() {
         return new StopShooterSpinAction();
     }
 
-    public StartUpShooterAction getStartUpShooterAction(double distanceFromGoal) {
-        return new StartUpShooterAction(distanceFromGoal);
+    public StartUpShooterAction getStartUpShooterAction(double distanceFromGoal, double shootingAngle) {
+        return new StartUpShooterAction(distanceFromGoal, shootingAngle);
+    }
+
+    public AimHoodAction getAimHoodAction(double wantedPos) {
+        return new AimHoodAction(wantedPos);
+    }
+    public AimHoodAction getAimHoodAction(double wantedAngle, AngleUnit unit) {
+        return getAimHoodAction((unit.toRadians(wantedAngle)-minServoAngle)/(maxServoAngle - minServoAngle));
     }
 
     @Override
     public void update(int iterationCount) {
-
+        flywheelMotor.setVelocity(desiredFlywheelSpeed);
     }
 
     @Override
