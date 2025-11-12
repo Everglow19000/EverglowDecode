@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode.everglow_library;
 
 import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.Vector2d;
+import com.seattlesolvers.solverslib.gamepad.GamepadEx;
+import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
 import org.firstinspires.ftc.teamcode.MecanumDrive;
@@ -30,20 +32,26 @@ public abstract class RobotBase {
         return -num*num;
     }
 
-    // moves the robot according to the gamepad input, and moves it without considering the heading if isAbsolute is true
-    public void calculateDrivePowers(Gamepad gamepad, boolean isAbsolute) {
-        Vector2d movement = new Vector2d(
-                squareKeepingSymbol((-gamepad.left_stick_y)*(1.0/Math.pow(4.5, gamepad.right_trigger))),
-                -gamepad.left_stick_x*(1.0/Math.pow(4, gamepad.right_trigger))
-        );
-
-        if (isAbsolute) {
-            movement = Utils.rotateByAngle(movement, -drive.localizer.getPose().heading.toDouble());
-        }
-
+    // moves the robot according to the gamepad input
+    public void calculateDrivePowers(Gamepad gamepad) {
         drive.setDrivePowers(new PoseVelocity2d(
-                movement,
-                -gamepad.right_stick_x*(1.0/Math.pow(5, gamepad.right_trigger))
+                new Vector2d(
+                        squareKeepingSymbol(-gamepad.left_stick_y)*(1.0/Math.pow(4.5, gamepad.right_trigger)),
+                        squareKeepingSymbol(-gamepad.left_stick_x)*(1.0/Math.pow(4, gamepad.right_trigger))
+                ),
+                squareKeepingSymbol(-gamepad.right_stick_x)*(1.0/Math.pow(5, gamepad.right_trigger))
+        ));
+        drive.updatePoseEstimate();
+    }
+
+    // moves the robot according to the gamepad input
+    public void calculateDrivePowers(GamepadEx gamepad) {
+        drive.setDrivePowers(new PoseVelocity2d(
+                new Vector2d(
+                        squareKeepingSymbol(gamepad.getLeftY())*(1.0/Math.pow(4.5, gamepad.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER))),
+                        squareKeepingSymbol(-gamepad.getLeftX())*(1.0/Math.pow(4, gamepad.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER)))
+                ),
+                squareKeepingSymbol(-gamepad.getRightX())*(1.0/Math.pow(5, gamepad.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER)))
         ));
         drive.updatePoseEstimate();
     }

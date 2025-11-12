@@ -16,7 +16,7 @@ public class Robot extends RobotBase {
     public Robot(HardwareMap hardwareMap) {
         subsystems = new Subsystem[1];
         this.drive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
-        intake = new Intake(hardwareMap);
+//        intake = new Intake(hardwareMap);
         subsystems[0] = intake;
     }
     @Override
