@@ -18,14 +18,19 @@ public class close_test {
             .setDimensions(18,18)
             .build();
 
-    myBot.runAction(myBot.getDrive().actionBuilder(new Pose2d(-50, -48, Math.toRadians(45)))
+
+    myBot.runAction(myBot.getDrive().actionBuilder(new Pose2d(-50, -48, Math.toRadians(225)))
+                    .setTangent(Math.toRadians(45))
                     .waitSeconds(8)
-                    .splineTo(new Vector2d(-12,-30) ,Math.toRadians(-90))
+                    //.strafeTo(new Vector2d(-30,-28))
+            //.waitSeconds(1)
+            //.setTangent(Math.toRadians(45))
+
+            .splineToSplineHeading(new Pose2d(-12,-30, Math.toRadians(-90)) ,Math.toRadians(-90))
             .splineTo(new Vector2d(-12,-40) ,Math.toRadians(-90))
-
-
-
-            //.waitSeconds(8)
+                            .splineTo(new Vector2d(-30,-28), Math.toRadians(225))
+            .waitSeconds(8)
+                    .strafeTo(new Vector2d(0,-28))
             .build());
 
     meepMeep.setBackground(MeepMeep.Background.FIELD_DECODE_JUICE_DARK)
