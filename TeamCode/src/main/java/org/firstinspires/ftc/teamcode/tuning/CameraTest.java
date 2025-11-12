@@ -7,7 +7,6 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.subsystems.Camera;
-import org.firstinspires.ftc.teamcode.subsystems.Motif;
 
 @TeleOp(name="CameraTest")
 public class CameraTest extends LinearOpMode {
@@ -20,12 +19,13 @@ public class CameraTest extends LinearOpMode {
 
         waitForStart();
 
-        Motif[] motif = new Motif[1];
-
-        Actions.runBlocking(camera.getDetermineMotifAction(motif));
+        double[] location = new double[3];
 
         while (opModeIsActive()) {
-            telemetry.addData("motif", motif[0]);
+            if (gamepad1.circle){
+                Actions.runBlocking(camera.getFindLocationAction(location , 50));
+            }
+            telemetry.addData("location", location);
             telemetry.update();
         }
     }
