@@ -7,14 +7,17 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.seattlesolvers.solverslib.gamepad.GamepadEx;
 import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
 import com.seattlesolvers.solverslib.hardware.motors.Motor;
+import com.seattlesolvers.solverslib.hardware.motors.MotorEx;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 @TeleOp(name="SolversLibTesting")
 @Config
 public class SolversLibTesting extends LinearOpMode {
-    Motor testMotor;
+    MotorEx testMotor;
     @Override
     public void runOpMode() throws InterruptedException {
-        testMotor = new Motor(hardwareMap, "shooterMotor", Motor.GoBILDA.BARE);
+        testMotor = new MotorEx(hardwareMap, "shooterMotor", Motor.GoBILDA.BARE);
 
         testMotor.setRunMode(Motor.RunMode.VelocityControl);
 
@@ -22,12 +25,16 @@ public class SolversLibTesting extends LinearOpMode {
 
         while (opModeIsActive()) {
             if (gamepad1.left_bumper) {
-                testMotor.set(gamepad1.left_stick_y);
+                testMotor.setVelocity(gamepad1.left_stick_y*36000, AngleUnit.DEGREES);
             }
 
-            telemetry.addData("left bumper", gamepad1.left_bumper);
-            telemetry.addData("left stick y", gamepad1.left_stick_y);
-            telemetry.addData("velocity", testMotor.getCorrectedVelocity());
+            telemetry.addData("velocity P", testMotor.getVeloCoefficients()[0]);
+            telemetry.addData("velocity I", testMotor.getVeloCoefficients()[1]);
+            telemetry.addData("velocity D", testMotor.getVeloCoefficients()[2]);
+            telemetry.addData("feedforward s", testMotor.getFeedforwardCoefficients()[0]);
+            telemetry.addData("feedforward v", testMotor.getFeedforwardCoefficients()[1]);
+            telemetry.addData("feedforward a", testMotor.getFeedforwardCoefficients()[2]);
+            telemetry.addData("velocity in RPM", 100*(testMotor.getCorrectedVelocity()/testMotor.getCPR()));
             telemetry.update();
         }
     }
