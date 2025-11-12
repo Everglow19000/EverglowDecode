@@ -8,6 +8,8 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.subsystems.Camera;
 
+import java.util.Arrays;
+
 @TeleOp(name="CameraTest")
 public class CameraTest extends LinearOpMode {
     @Override
@@ -25,7 +27,7 @@ public class CameraTest extends LinearOpMode {
             if (gamepad1.circle){
                 Actions.runBlocking(camera.getFindLocationAction(location , 50));
             }
-            telemetry.addData("location", location);
+            telemetry.addData("location", Arrays.toString(location));
             telemetry.update();
         }
     }

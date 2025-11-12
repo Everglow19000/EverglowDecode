@@ -61,6 +61,9 @@ public class Camera implements Subsystem{
         public FindLocationAction(double[] location, int amount) {
             locations = new Pose3D[amount];
             this.location = location;
+            location[0] = 0.0;
+            location[1] = 0.0;
+            location[2] = 0.0;
         }
 
         @Override
