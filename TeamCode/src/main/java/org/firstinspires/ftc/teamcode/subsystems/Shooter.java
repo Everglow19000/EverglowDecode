@@ -29,7 +29,7 @@ public class Shooter implements Subsystem {
     // | Flywheel Parameters |
     // -----------------------
     private static double goalHeight = 0.9843; // meters above the field of the lip of the goal
-    private static double shooterHeight = 0.3; // meters above the field of artifact as it leaves shooter TODO: Change according to actual robot measurements
+    private static double shooterHeight = 0.26; // meters above the field of artifact as it leaves shooter TODO: Change according to actual robot measurements
     private static boolean isFlywheelInverted = true;
     private static double flywheelRadius = 0.048; // in meters
 
@@ -108,12 +108,20 @@ public class Shooter implements Subsystem {
     }
 
     public double getFlywheelTicksPerSecondForArtifactVelocity(double artifactVelocity) {
-        return ((artifactVelocity/flywheelRadius)/2*Math.PI)/flywheelMotor.getCPR();
+        return ((artifactVelocity/flywheelRadius)/(2*Math.PI))*flywheelMotor.getCPR();
     }
 
-    public void setFlywheelmotorSpeed(double ticksPerSecond) {
+    public void setFlywheelMotorSpeed(double ticksPerSecond) {
         desiredFlywheelSpeed = ticksPerSecond;
         flywheelMotor.setVelocity(ticksPerSecond);
+    }
+
+    public double getFlywheelMotorCurrentRPM() {
+        return (flywheelMotor.getCorrectedVelocity()/flywheelMotor.getCPR())*60.0;
+    }
+
+    public double getFlywheelMotorCurrentTicksPerSecond() {
+        return flywheelMotor.getCorrectedVelocity();
     }
 
     public void setHoodServoAngle(double angle, AngleUnit unit) {
