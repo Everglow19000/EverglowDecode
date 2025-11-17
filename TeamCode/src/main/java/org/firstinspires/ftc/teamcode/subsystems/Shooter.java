@@ -6,6 +6,7 @@ import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.seattlesolvers.solverslib.controller.PIDController;
 import com.seattlesolvers.solverslib.hardware.motors.Motor;
 import com.seattlesolvers.solverslib.hardware.motors.MotorEx;
 
@@ -85,6 +86,7 @@ public class Shooter implements Subsystem {
 
     MotorEx flywheelMotor;
     Servo hoodServo;
+    PIDController flywheelPID = new PIDController(0.2, 0.01, 0.0);
     private double desiredFlywheelSpeed = 0; // [ticks/s]
     private double targetServoPos = 0;
 
@@ -93,7 +95,7 @@ public class Shooter implements Subsystem {
         flywheelMotor = new MotorEx(hardwareMap, "flywheelMotor", Motor.GoBILDA.BARE);
 
         flywheelMotor.setInverted(isFlywheelInverted);
-        flywheelMotor.setRunMode(Motor.RunMode.VelocityControl);
+        flywheelMotor.setRunMode(Motor.RunMode.RawPower);
 
 
         hoodServo = hardwareMap.get(Servo.class, "hoodServo");
@@ -113,7 +115,6 @@ public class Shooter implements Subsystem {
 
     public void setFlywheelMotorSpeed(double ticksPerSecond) {
         desiredFlywheelSpeed = ticksPerSecond;
-        flywheelMotor.setVelocity(ticksPerSecond);
     }
 
     public double getFlywheelMotorCurrentRPM() {
@@ -167,7 +168,12 @@ public class Shooter implements Subsystem {
 
     @Override
     public void update(int iterationCount) {
-        flywheelMotor.setVelocity(desiredFlywheelSpeed);
+        flywheelMotor.set(
+                flywheelPID.calculate(
+                        flywheelMotor.getCorrectedVelocity(),
+                        desiredFlywheelSpeed
+                )
+        );
     }
 
     @Override

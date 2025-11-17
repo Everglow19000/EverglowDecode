@@ -1,39 +1,39 @@
 package org.firstinspires.ftc.teamcode.tuning;
 
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.seattlesolvers.solverslib.controller.PIDController;
 import com.seattlesolvers.solverslib.gamepad.GamepadEx;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
+import com.seattlesolvers.solverslib.hardware.motors.Motor;
+import com.seattlesolvers.solverslib.hardware.motors.MotorEx;
 
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 
 @TeleOp(name = "ShooterTuningFormula")
 @Config
 public class ShooterTuning extends LinearOpMode {
-    public static double distanceFromGoal = 3; //meters
-    public static double hoodAngleRadians = 0.29;
-    public static double tickPerSecond = 2000;
-    int iterations = 0;
+    public static double tickPerSecond = 0;
 
     @Override
     public void runOpMode() throws InterruptedException {
-        Shooter shooter = new Shooter(hardwareMap);
-
-        GamepadEx gamepad = new GamepadEx(gamepad1);
 
         waitForStart();
 
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+        Shooter shooter = new Shooter(hardwareMap);
+
+
         while (opModeIsActive()) {
-            iterations++;
-            gamepad.readButtons();
-
             shooter.setFlywheelMotorSpeed(tickPerSecond);
+            shooter.update(0);
 
-            telemetry.addData("is cross press", gamepad1.cross);
-            telemetry.addData("required velocity", Shooter.getArtifactVelocityForDistanceAndAngle(distanceFromGoal, hoodAngleRadians));
-            telemetry.addData("flywheel ticks", shooter.getFlywheelTicksPerSecondForArtifactVelocity(Shooter.getArtifactVelocityForDistanceAndAngle(distanceFromGoal, hoodAngleRadians)));
-            telemetry.addData("RPM", shooter.getFlywheelMotorCurrentTicksPerSecond());
+            telemetry.addData("intended speed", tickPerSecond);
+            telemetry.addData("recorded speed", shooter.getFlywheelMotorCurrentTicksPerSecond());
+            telemetry.addData("recorded speed RPM", shooter.getFlywheelMotorCurrentRPM());
             telemetry.update();
         }
     }
