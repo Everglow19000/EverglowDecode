@@ -47,6 +47,8 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import Ori.Coval.Logging.Logger.KoalaLog;
+
 public class SwerveDrive {
     public static class Params {
         // IMU orientation
@@ -172,6 +174,10 @@ public class SwerveDrive {
         for (int i = 0; i < states.length; i++) {
             modules[i].setState(states[i]);
         }
+
+        KoalaLog.log("Module States", Arrays.toString(states), false);
+        KoalaLog.log("Chassis Speeds", localizer.update().toString(), false);
+        KoalaLog.log("Rotation", localizer.getPose().heading.log(), false);
     }
 
     public final class FollowTrajectoryAction implements Action {
@@ -226,6 +232,9 @@ public class SwerveDrive {
             SwerveModuleState[] velocityStates = kinematics.toSwerveModuleStates(new ChassisSpeeds(command.linearVel.x.get(0), command.linearVel.y.get(0), command.angVel.get(0)));
             SwerveModuleState[] accelerationStates = kinematics.toSwerveModuleStates(new ChassisSpeeds(command.linearVel.x.get(1), command.linearVel.y.get(1), command.angVel.get(1)));
             double voltage = voltageSensor.getVoltage();
+            KoalaLog.log("Module States", Arrays.toString(velocityStates), false);
+            KoalaLog.log("Chassis Speeds", localizer.update().toString(), false);
+            KoalaLog.log("Rotation", localizer.getPose().heading.log(), false);
 
             final MotorFeedforward feedforward = new MotorFeedforward(PARAMS.kS,
                     PARAMS.kV / PARAMS.inPerTick, PARAMS.kA / PARAMS.inPerTick);
