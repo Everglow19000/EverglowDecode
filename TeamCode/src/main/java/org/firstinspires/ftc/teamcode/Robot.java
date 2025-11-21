@@ -9,17 +9,23 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.teamcode.everglow_library.RobotBase;
 import org.firstinspires.ftc.teamcode.everglow_library.Subsystem;
 import org.firstinspires.ftc.teamcode.subsystems.Intake;
+import org.firstinspires.ftc.teamcode.subsystems.Camera;
 import org.firstinspires.ftc.teamcode.subsystems.Motif;
 
 public class Robot extends RobotBase {
     public static Vector2d goalPose = new Vector2d(-62, -60);
     public static Motif currentMotif;
+
     Intake intake;
+    private Camera camera;
     public Robot(HardwareMap hardwareMap) {
-        subsystems = new Subsystem[1];
+        subsystems = new Subsystem[2];
         this.drive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
+        camera = new Camera(hardwareMap);
         intake = new Intake(hardwareMap);
         subsystems[0] = intake;
+        subsystems[1] = camera;
+
     }
     @Override
     public void update(int iterationCount) {
@@ -33,11 +39,14 @@ public class Robot extends RobotBase {
                 .turnTo(Math.atan2(goalPoseDiff.x, goalPoseDiff.y))
                 .build();
     }
-    public Action getLocalizeWithApriltagAction(Pose2d pose) {
-        return null;
+    // pose is formatted as following, since Pose2d class cannot be changed:
+    // [x, y, heading]
+    public Action getLocalizeWithApriltagAction(double[] pose) {
+        return camera.getFindLocationAction(pose, 100);
     }
-    public Action getOrderArtifactsAction(Motif motif) {
-        return null;
+    // the contents of motif[0] will be changed according to the Motif on the obelisk
+    public Action getOrderArtifactsAction(Motif[] motif) {
+        return camera.getDetermineMotifAction(motif);
     }
     public Action getSpinUpShooterAction(double distance) {
         return null;
