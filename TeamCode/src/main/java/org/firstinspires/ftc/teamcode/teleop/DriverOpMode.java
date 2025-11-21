@@ -36,7 +36,7 @@ public class DriverOpMode extends LinearOpMode {
             if (gamepad.wasJustPressed(GamepadKeys.Button.B)) {
                 robot.launchSingle();
             }
-            robot.calculateDrivePowers(gamepad.gamepad, false);
+            robot.calculateDrivePowers(gamepad);
             robot.update(iterations);
         }
     }
