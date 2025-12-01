@@ -38,6 +38,9 @@ public class DriverOpMode extends LinearOpMode {
             }
             robot.calculateDrivePowers(gamepad);
             robot.update(iterations);
+
+            telemetry.addData("pos", robot.drive.localizer.getPose().toString());
+            telemetry.update();
         }
     }
 }

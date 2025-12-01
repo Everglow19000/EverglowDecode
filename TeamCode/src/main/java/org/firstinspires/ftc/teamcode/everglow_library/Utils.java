@@ -11,7 +11,7 @@ public class Utils {
         return new Vector2d(newX, newY);
     }
 
-    public static InterpLUT interpLUTFromArrays(int[] inputs, int[] outputs) {
+    public static InterpLUT interpLUTFromArrays(double[] inputs, double[] outputs) {
         if (inputs.length != outputs.length) {
             throw new IllegalArgumentException("Inputs and Outputs must be the same length!");
         }

@@ -11,6 +11,8 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.teamcode.everglow_library.Subsystem;
@@ -74,15 +76,17 @@ public class Camera implements Subsystem{
                 limelight3A.pipelineSwitch(1);
             }
             LLResult result = limelight3A.getLatestResult();
-            locations[index] = result.getBotpose();
-            index++;
+            if (result.isValid()) {
+                locations[index] = result.getBotpose();
+                index++;
+            }
 
             if (index >= locations.length) {
                 for (Pose3D pose3D : locations) {
-                    location[0] += pose3D.getPosition().x / locations.length;
-                    location[1] += pose3D.getPosition().y / locations.length;
-                    location[2] += pose3D.getOrientation().getYaw() / locations.length;
+                    location[0] += pose3D.getPosition().toUnit(DistanceUnit.INCH).x / locations.length;
+                    location[1] += pose3D.getPosition().toUnit(DistanceUnit.INCH).y / locations.length;
                 }
+                location[2] += locations[locations.length-1].getOrientation().getYaw(AngleUnit.RADIANS);
                 return false;
             }
             return true;
