@@ -1,6 +1,9 @@
 package org.firstinspires.ftc.teamcode.everglow_library;
 
 import com.acmerobotics.roadrunner.Vector2d;
+import com.qualcomm.hardware.lynx.LynxServoController;
+import com.qualcomm.robotcore.hardware.PwmControl;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.seattlesolvers.solverslib.util.InterpLUT;
 
 public class Utils {
@@ -23,5 +26,10 @@ public class Utils {
 
         lookUpTable.createLUT();
         return lookUpTable;
+    }
+
+    public static void setServoPWMRange(Servo servo, double usPulseLower, double usPulseUpper) {
+        LynxServoController lynxServoController = (LynxServoController) servo.getController();
+        lynxServoController.setServoPwmRange(servo.getPortNumber(), new PwmControl.PwmRange(usPulseLower, usPulseUpper));
     }
 }

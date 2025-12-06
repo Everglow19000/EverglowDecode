@@ -3,16 +3,14 @@ package org.firstinspires.ftc.teamcode.tuning;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
-import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Pose2d;
-import com.acmerobotics.roadrunner.Rotation2d;
+import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.MecanumDrive;
-import org.firstinspires.ftc.teamcode.OTOSLocalizer;
 import org.firstinspires.ftc.teamcode.subsystems.Camera;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 
@@ -23,13 +21,14 @@ import java.util.Arrays;
 public class ShooterTuning extends LinearOpMode {
     public static double tickPerSecond = 0;
     public static double servoPosition = 0.5;
+    public static boolean isTuning = true;
 
     public static double p = 0.025;
     public static double i = 0.2;
     public static double d = 0;
     public static double f = 0.0001;
     int iterations = 0;
-
+    double distance;
     @Override
     public void runOpMode() throws InterruptedException {
         Vector2d goalPose = new Vector2d(-62, -60);
@@ -42,28 +41,29 @@ public class ShooterTuning extends LinearOpMode {
 
         waitForStart();
 
-        double[] lastPose = {0.0, 0.0, 0.0};
         double[] pose = {0.0, 0.0, 0.0};
-        Camera.FindLocationAction getPoseAction = camera.getFindLocationAction(pose, 1);
+        Camera.FindLocationAction getPoseAction = camera.getFindLocationAction(pose, 250);
 
         Actions.runBlocking(getPoseAction);
 
-        lastPose[0] = pose[0];
-        lastPose[1] = pose[1];
-        lastPose[2] = pose[2];
+        Pose2d startPose = new Pose2d(pose[0], pose[1], pose[2]);
 
-        OTOSLocalizer localizer = new OTOSLocalizer(hardwareMap, new Pose2d(pose[0], pose[1], pose[2]));
-        localizer.setPose(new Pose2d(pose[0], pose[1], pose[2]));
-
-
-//        getPoseAction = camera.getFindLocationAction(pose, 100);
-
+        MecanumDrive drive = new MecanumDrive(hardwareMap, startPose);
+        drive.localizer.setPose(new Pose2d(pose[0], pose[1], pose[2]));
+        
         while (opModeIsActive()) {
             iterations++;
-            localizer.update();
-            lastPose[0] = localizer.getPose().position.x;
-            lastPose[1] = localizer.getPose().position.y;
-            lastPose[2] = localizer.getPose().heading.log();
+            drive.setDrivePowers(new PoseVelocity2d(
+                    new Vector2d(
+                            -gamepad1.left_stick_y*(1.0/Math.pow(4.5, gamepad1.right_trigger)),
+                            -gamepad1.left_stick_x*(1.0/Math.pow(4, gamepad1.right_trigger))
+                    ),
+                    -gamepad1.right_stick_x*(1.0/Math.pow(5, gamepad1.right_trigger))
+            ));
+            drive.updatePoseEstimate();
+            pose[0] = drive.localizer.getPose().position.x;
+            pose[1] = drive.localizer.getPose().position.y;
+            pose[2] = drive.localizer.getPose().heading.log();
 //            if (!getPoseAction.run(new TelemetryPacket())) {
 //                lastPose[0] = pose[0];
 //                lastPose[1] = pose[1];
@@ -71,18 +71,24 @@ public class ShooterTuning extends LinearOpMode {
 //                localizer.setPose(new Pose2d(lastPose[0], lastPose[1], lastPose[2]));
 //                getPoseAction = camera.getFindLocationAction(pose, 100);
 //            }
-            shooter.flywheelPIDF.setPIDF(p, i, d, f);
-            shooter.setFlywheelMotorSpeed(tickPerSecond);
-            shooter.setHoodServoPosition(servoPosition);
 
-            Vector2d diff = goalPose.minus(new Vector2d(lastPose[0], lastPose[1]));
+            Vector2d diff = goalPose.minus(new Vector2d(pose[0], pose[1]));
+            distance = Math.sqrt(Math.pow(diff.x, 2) + Math.pow(diff.y, 2));
+            if (isTuning) {
+                shooter.setFlywheelMotorSpeed(tickPerSecond);
+                shooter.setHoodServoPosition(servoPosition);
+            }
+            else {
+                shooter.setFlywheelMotorSpeed(shooter.getFlywheelTicksPerSecondForDistanceFromGoal(distance));
+                shooter.setHoodServoAngle(shooter.getServoAngleForDistanceFromGoal(distance));
+            }
+
 
             shooter.update(iterations);
-            telemetry.addData("RR test", pose[2]);
             telemetry.addData("iterations/s", iterations/getRuntime());
             telemetry.addData("intended speed", tickPerSecond);
-            telemetry.addData("position", Arrays.toString(lastPose));
-            telemetry.addData("distance from goal", Math.sqrt(Math.pow(diff.x, 2) + Math.pow(diff.y, 2)));
+            telemetry.addData("position", Arrays.toString(pose));
+            telemetry.addData("distance from goal", distance);
             telemetry.addData("recorded speed", shooter.getFlywheelMotorCurrentTicksPerSecond());
             telemetry.addData("motor given power", shooter.getFlywheelPower());
             telemetry.update();
