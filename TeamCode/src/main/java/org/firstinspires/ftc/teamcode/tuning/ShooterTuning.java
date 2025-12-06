@@ -1,8 +1,12 @@
 package org.firstinspires.ftc.teamcode.tuning;
 
+import static org.firstinspires.ftc.teamcode.Robot.goalPose;
+
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
+import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.Vector2d;
@@ -29,6 +33,18 @@ public class ShooterTuning extends LinearOpMode {
     public static double f = 0.0001;
     int iterations = 0;
     double distance;
+
+    MecanumDrive drive;
+
+    public Action getOrientRobotForShootAction() {
+        Pose2d currentPose = drive.localizer.getPose();
+        Vector2d currentVector = currentPose.position;
+        Vector2d goalPoseDiff = goalPose.minus(currentVector);
+        return drive.actionBuilder(currentPose)
+                .turnTo(Math.atan2(goalPoseDiff.y, goalPoseDiff.x))
+                .build();
+    }
+
     @Override
     public void runOpMode() throws InterruptedException {
         Vector2d goalPose = new Vector2d(-62, -60);
@@ -48,19 +64,33 @@ public class ShooterTuning extends LinearOpMode {
 
         Pose2d startPose = new Pose2d(pose[0], pose[1], pose[2]);
 
-        MecanumDrive drive = new MecanumDrive(hardwareMap, startPose);
+        drive = new MecanumDrive(hardwareMap, startPose);
         drive.localizer.setPose(new Pose2d(pose[0], pose[1], pose[2]));
+
+        Action orientRobotAction = null;
+        boolean orientRobotResult = false;
         
         while (opModeIsActive()) {
             iterations++;
-            drive.setDrivePowers(new PoseVelocity2d(
-                    new Vector2d(
-                            -gamepad1.left_stick_y*(1.0/Math.pow(4.5, gamepad1.right_trigger)),
-                            -gamepad1.left_stick_x*(1.0/Math.pow(4, gamepad1.right_trigger))
-                    ),
-                    -gamepad1.right_stick_x*(1.0/Math.pow(5, gamepad1.right_trigger))
-            ));
-            drive.updatePoseEstimate();
+            if (gamepad1.leftBumperWasPressed()) {
+                orientRobotAction = getOrientRobotForShootAction();
+            }
+
+            if (orientRobotAction != null && !orientRobotResult) {
+                orientRobotResult = orientRobotAction.run(new TelemetryPacket());
+            }
+            else {
+                orientRobotAction = null;
+                orientRobotResult = false;
+                drive.setDrivePowers(new PoseVelocity2d(
+                        new Vector2d(
+                                -gamepad1.left_stick_y*(1.0/Math.pow(4.5, gamepad1.right_trigger)),
+                                -gamepad1.left_stick_x*(1.0/Math.pow(4, gamepad1.right_trigger))
+                        ),
+                        -gamepad1.right_stick_x*(1.0/Math.pow(5, gamepad1.right_trigger))
+                ));
+                drive.updatePoseEstimate();
+            }
             pose[0] = drive.localizer.getPose().position.x;
             pose[1] = drive.localizer.getPose().position.y;
             pose[2] = drive.localizer.getPose().heading.log();
@@ -78,13 +108,18 @@ public class ShooterTuning extends LinearOpMode {
                 shooter.setFlywheelMotorSpeed(tickPerSecond);
                 shooter.setHoodServoPosition(servoPosition);
             }
-            else {
+            else if (gamepad1.circle) {
                 shooter.setFlywheelMotorSpeed(shooter.getFlywheelTicksPerSecondForDistanceFromGoal(distance));
                 shooter.setHoodServoAngle(shooter.getServoAngleForDistanceFromGoal(distance));
+            }
+            else {
+                shooter.stopMotor();
             }
 
 
             shooter.update(iterations);
+            telemetry.addData("orient result", orientRobotResult);
+            telemetry.addData("orient action", orientRobotAction);
             telemetry.addData("iterations/s", iterations/getRuntime());
             telemetry.addData("intended speed", tickPerSecond);
             telemetry.addData("position", Arrays.toString(pose));

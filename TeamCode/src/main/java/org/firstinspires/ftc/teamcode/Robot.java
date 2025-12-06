@@ -11,6 +11,7 @@ import org.firstinspires.ftc.teamcode.everglow_library.Subsystem;
 import org.firstinspires.ftc.teamcode.subsystems.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.Camera;
 import org.firstinspires.ftc.teamcode.subsystems.Motif;
+import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 
 public class Robot extends RobotBase {
     public static Vector2d goalPose = new Vector2d(-62, -60);
@@ -18,14 +19,16 @@ public class Robot extends RobotBase {
 
     Intake intake;
     private Camera camera;
+    private Shooter shooter;
     public Robot(HardwareMap hardwareMap) {
-        subsystems = new Subsystem[2];
+        subsystems = new Subsystem[3];
         this.drive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
         camera = new Camera(hardwareMap);
         intake = new Intake(hardwareMap);
+        shooter = new Shooter(hardwareMap);
         subsystems[0] = intake;
         subsystems[1] = camera;
-
+        subsystems[2] = shooter;
     }
     @Override
     public void update(int iterationCount) {
@@ -36,7 +39,7 @@ public class Robot extends RobotBase {
         Vector2d currentVector = currentPose.position;
         Vector2d goalPoseDiff = goalPose.minus(currentVector);
         return drive.actionBuilder(currentPose)
-                .turnTo(Math.atan2(goalPoseDiff.x, goalPoseDiff.y))
+                .turnTo(Math.atan2(goalPoseDiff.y, goalPoseDiff.x))
                 .build();
     }
     // pose is formatted as following, since Pose2d class cannot be changed:
