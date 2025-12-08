@@ -13,6 +13,7 @@ import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.MecanumDrive;
 import org.firstinspires.ftc.teamcode.subsystems.Camera;
@@ -26,6 +27,7 @@ public class ShooterTuning extends LinearOpMode {
     public static double tickPerSecond = 0;
     public static double servoAngle = 10.0;
     public static boolean isTuning = true;
+    public static boolean feedingServoUp = false;
 
     public static double p = 0.025;
     public static double i = 0.2;
@@ -51,6 +53,8 @@ public class ShooterTuning extends LinearOpMode {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         Shooter shooter = new Shooter(hardwareMap);
         Camera camera = new Camera(hardwareMap);
+        Servo feedingServo = hardwareMap.get(Servo.class, "feedingServo");
+        feedingServo.setDirection(Servo.Direction.REVERSE);
 
         camera.start();
 
@@ -108,6 +112,12 @@ public class ShooterTuning extends LinearOpMode {
             if (isTuning) {
                 shooter.setFlywheelMotorSpeed(tickPerSecond);
                 shooter.setHoodServoAngle(servoAngle);
+                if (feedingServoUp) {
+                    feedingServo.setPosition(0.7);
+                }
+                else {
+                    feedingServo.setPosition(0.5);
+                }
             }
             else if (gamepad1.circle) {
                 shooter.setFlywheelMotorSpeed(shooter.getFlywheelTicksPerSecondForDistanceFromGoal(distance));
