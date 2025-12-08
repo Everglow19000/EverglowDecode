@@ -24,7 +24,7 @@ import java.util.Arrays;
 @Config
 public class ShooterTuning extends LinearOpMode {
     public static double tickPerSecond = 0;
-    public static double servoPosition = 0.5;
+    public static double servoAngle = 10.0;
     public static boolean isTuning = true;
 
     public static double p = 0.025;
@@ -72,6 +72,7 @@ public class ShooterTuning extends LinearOpMode {
         
         while (opModeIsActive()) {
             iterations++;
+            servoAngle = Math.min(Shooter.maxServoAngle, Math.max(Shooter.minServoAngle, servoAngle));
             if (gamepad1.leftBumperWasPressed()) {
                 orientRobotAction = getOrientRobotForShootAction();
             }
@@ -106,7 +107,7 @@ public class ShooterTuning extends LinearOpMode {
             distance = Math.sqrt(Math.pow(diff.x, 2) + Math.pow(diff.y, 2));
             if (isTuning) {
                 shooter.setFlywheelMotorSpeed(tickPerSecond);
-                shooter.setHoodServoPosition(servoPosition);
+                shooter.setHoodServoAngle(servoAngle);
             }
             else if (gamepad1.circle) {
                 shooter.setFlywheelMotorSpeed(shooter.getFlywheelTicksPerSecondForDistanceFromGoal(distance));
