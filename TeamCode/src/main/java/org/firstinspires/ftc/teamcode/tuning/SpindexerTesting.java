@@ -5,7 +5,9 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.teamcode.everglow_library.Utils;
 import org.firstinspires.ftc.teamcode.subsystems.ArtifactColor;
 import org.firstinspires.ftc.teamcode.subsystems.FeedingMechanism;
 import org.firstinspires.ftc.teamcode.subsystems.Motif;
@@ -21,8 +23,19 @@ public class SpindexerTesting extends LinearOpMode {
     public static int storedArtifactIndex1 = 0;
     public static int storedArtifactIndex2 = 0;
     public static int startingSpindexerPosition = 0;
+    public static boolean feedingCycleActive = false;
+    public static double feedingCycleTimeMS = 200;
+    public static boolean spindexerActive = false;
+    public static double spindexerPosition = 0;
+
     @Override
     public void runOpMode() throws InterruptedException {
+        Servo feedingServo = hardwareMap.get(Servo.class, "feedingServo");
+        feedingServo.setDirection(Servo.Direction.REVERSE);
+
+        Servo spindexerServo = hardwareMap.get(Servo.class, "spindexerServo");
+        Utils.setServoPWMRange(spindexerServo, 510, 2490);
+
         Motif[] motifs = new Motif[4];
         motifs[0] = Motif.NONE;
         motifs[1] = Motif.PGP;
@@ -40,9 +53,20 @@ public class SpindexerTesting extends LinearOpMode {
         spindexerPositions[2] = FeedingMechanism.SpindexerPosition.SHOOT_INDEX_2;
 
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+
+        double servoPos = FeedingMechanism.FeedingServoPosition.UP.position;
         waitForStart();
 
         while (opModeIsActive()) {
+            if ((System.currentTimeMillis() % (feedingCycleTimeMS*2)) - feedingCycleTimeMS >= 0) {
+                servoPos = FeedingMechanism.FeedingServoPosition.UP.position;
+            }
+            else {
+                servoPos = FeedingMechanism.FeedingServoPosition.DOWN.position;
+            }
+
+            feedingServo.setPosition(servoPos);
+
             ArtifactColor[] colors = new ArtifactColor[3];
             colors[0] = artifactColors[storedArtifactIndex0];
             colors[1] = artifactColors[storedArtifactIndex1];

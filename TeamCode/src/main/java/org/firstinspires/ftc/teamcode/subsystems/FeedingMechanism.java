@@ -17,13 +17,13 @@ import org.firstinspires.ftc.teamcode.everglow_library.Subsystem;
 import org.firstinspires.ftc.teamcode.everglow_library.Utils;
 
 public class FeedingMechanism implements Subsystem {
-    public enum FeedingServoPositions {
-        DOWN(0),
-        UP(0.2);
+    public enum FeedingServoPosition {
+        DOWN(0.5),
+        UP(0.7);
 
         public double position;
 
-        private FeedingServoPositions(double position) {
+        private FeedingServoPosition(double position) {
             this.position = position;
         }
     }
@@ -90,14 +90,31 @@ public class FeedingMechanism implements Subsystem {
 
     // moves the spindexer to the next position, and raises and lowers the feeding servo. assumes shooter is already active and at speed
     public class FeedSingleArtifactAction implements Action {
-        public FeedSingleArtifactAction() {
+        SpindexerPosition position;
+        boolean hasStartedFeeding = false;
+        boolean hasStartedReturn = false;
 
+        // both in ms
+        double feedingStartTime;
+        static final double moveTime = 500;
+        public FeedSingleArtifactAction(SpindexerPosition position) {
+            this.position = position;
         }
 
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            if (!hasStartedFeeding) {
+                hasStartedFeeding = true;
+                feedingStartTime = System.currentTimeMillis();
+                setFeedingServoPosition(FeedingServoPosition.UP);
+            }
 
-            return false;
+            if (!limitSwitch.getState() && hasStartedFeeding && !hasStartedReturn && System.currentTimeMillis() - feedingStartTime > moveTime) {
+                hasStartedReturn = true;
+                setFeedingServoPosition(FeedingServoPosition.DOWN);
+            }
+
+            return hasStartedFeeding && System.currentTimeMillis() - feedingStartTime > moveTime && !limitSwitch.getState();
         }
     }
 
@@ -109,10 +126,12 @@ public class FeedingMechanism implements Subsystem {
     //swyft sense magnetic limit switch, true if feedingServo is down
     DigitalChannel limitSwitch;
     SpindexerPosition currentSpindexerPosition;
+    FeedingServoPosition currentFeedingServoPosition;
     Motif motif;
     ArtifactColor[] storedArtifacts = new ArtifactColor[3];
     public FeedingMechanism(HardwareMap hardwareMap, Motif motif) {
         this.feedingServo = hardwareMap.get(Servo.class,"feedingServo");
+        feedingServo.setDirection(Servo.Direction.REVERSE);
         this.spindexerServo = hardwareMap.get(Servo.class, "spindexerServo");
         Utils.setServoPWMRange(spindexerServo, 510, 2490);
         this.colorSensor  = hardwareMap.get(ColorRangeSensor.class,"intakeSensor");
@@ -169,6 +188,10 @@ public class FeedingMechanism implements Subsystem {
     private void setSpindexerPosition(SpindexerPosition position) {
         currentSpindexerPosition = position;
         spindexerServo.setPosition(position.position);
+    }
+    private void setFeedingServoPosition(FeedingServoPosition position) {
+        currentFeedingServoPosition = position;
+        feedingServo.setPosition(position.position);
     }
 
     private int countArtifactsInSpindexer() {
