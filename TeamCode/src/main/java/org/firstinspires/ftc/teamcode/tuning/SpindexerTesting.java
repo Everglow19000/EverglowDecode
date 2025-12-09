@@ -58,11 +58,15 @@ public class SpindexerTesting extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
-            if ((System.currentTimeMillis() % (feedingCycleTimeMS*2)) - feedingCycleTimeMS >= 0) {
+            if (feedingCycleActive && (System.currentTimeMillis() % (feedingCycleTimeMS*2)) - feedingCycleTimeMS >= 0) {
                 servoPos = FeedingMechanism.FeedingServoPosition.UP.position;
             }
             else {
                 servoPos = FeedingMechanism.FeedingServoPosition.DOWN.position;
+            }
+
+            if (spindexerActive) {
+                spindexerServo.setPosition(spindexerPosition);
             }
 
             feedingServo.setPosition(servoPos);

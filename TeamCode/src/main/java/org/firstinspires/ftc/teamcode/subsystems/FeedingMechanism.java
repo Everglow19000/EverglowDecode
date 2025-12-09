@@ -30,7 +30,7 @@ public class FeedingMechanism implements Subsystem {
 
     public enum SpindexerPosition {
         SHOOT_INDEX_0(0.595),
-        SHOOT_INDEX_1(1),
+        SHOOT_INDEX_1(0.985),
         SHOOT_INDEX_2(0.205),
         INTAKE_INDEX_0(0.02),
         INTAKE_INDEX_1(0.41),
