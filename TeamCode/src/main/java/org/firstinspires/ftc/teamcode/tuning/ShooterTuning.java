@@ -1,11 +1,11 @@
 package org.firstinspires.ftc.teamcode.tuning;
 
-import static org.firstinspires.ftc.teamcode.Robot.goalPose;
+import static org.firstinspires.ftc.teamcode.Robot.goalPoseDistance;
+import static org.firstinspires.ftc.teamcode.Robot.goalPoseOrientation;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
-import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.PoseVelocity2d;
@@ -38,11 +38,10 @@ public class ShooterTuning extends LinearOpMode {
 
     MecanumDrive drive;
 
-    public Action getOrientRobotForShootAction() {
-        Pose2d currentPose = drive.localizer.getPose();
-        Vector2d currentVector = currentPose.position;
-        Vector2d goalPoseDiff = goalPose.minus(currentVector);
-        return drive.actionBuilder(currentPose)
+    public Action getOrientRobotForShootAction(Pose2d pose) {
+        Vector2d currentVector = pose.position;
+        Vector2d goalPoseDiff = goalPoseOrientation.minus(currentVector);
+        return drive.actionBuilder(pose)
                 .turnTo(Math.atan2(goalPoseDiff.y, goalPoseDiff.x))
                 .build();
     }
@@ -72,30 +71,28 @@ public class ShooterTuning extends LinearOpMode {
         drive.localizer.setPose(new Pose2d(pose[0], pose[1], pose[2]));
 
         Action orientRobotAction = null;
-        boolean orientRobotResult = false;
+
+        int flag = 0;
+
+        boolean lastIterationLeftBumper = false;
         
         while (opModeIsActive()) {
             iterations++;
             servoAngle = Math.min(Shooter.maxServoAngle, Math.max(Shooter.minServoAngle, servoAngle));
-            if (gamepad1.leftBumperWasPressed()) {
-                orientRobotAction = getOrientRobotForShootAction();
+            if (gamepad1.left_bumper && !lastIterationLeftBumper) {
+                Actions.runBlocking(getOrientRobotForShootAction(drive.localizer.getPose()));
+                flag++;
             }
+            lastIterationLeftBumper = gamepad1.left_bumper;
 
-            if (orientRobotAction != null && !orientRobotResult) {
-                orientRobotResult = orientRobotAction.run(new TelemetryPacket());
-            }
-            else {
-                orientRobotAction = null;
-                orientRobotResult = false;
-                drive.setDrivePowers(new PoseVelocity2d(
-                        new Vector2d(
-                                -gamepad1.left_stick_y*(1.0/Math.pow(4.5, gamepad1.right_trigger)),
-                                -gamepad1.left_stick_x*(1.0/Math.pow(4, gamepad1.right_trigger))
-                        ),
-                        -gamepad1.right_stick_x*(1.0/Math.pow(5, gamepad1.right_trigger))
-                ));
-                drive.updatePoseEstimate();
-            }
+            drive.setDrivePowers(new PoseVelocity2d(
+                    new Vector2d(
+                            -gamepad1.left_stick_y*(1.0/Math.pow(4.5, gamepad1.right_trigger)),
+                            -gamepad1.left_stick_x*(1.0/Math.pow(4, gamepad1.right_trigger))
+                    ),
+                    -gamepad1.right_stick_x*(1.0/Math.pow(5, gamepad1.right_trigger))
+            ));
+            drive.updatePoseEstimate();
             pose[0] = drive.localizer.getPose().position.x;
             pose[1] = drive.localizer.getPose().position.y;
             pose[2] = drive.localizer.getPose().heading.log();
@@ -107,7 +104,7 @@ public class ShooterTuning extends LinearOpMode {
 //                getPoseAction = camera.getFindLocationAction(pose, 100);
 //            }
 
-            Vector2d diff = goalPose.minus(new Vector2d(pose[0], pose[1]));
+            Vector2d diff = goalPoseDistance.minus(new Vector2d(pose[0], pose[1]));
             distance = Math.sqrt(Math.pow(diff.x, 2) + Math.pow(diff.y, 2));
             if (isTuning) {
                 shooter.setFlywheelMotorSpeed(tickPerSecond);
@@ -122,6 +119,12 @@ public class ShooterTuning extends LinearOpMode {
             else if (gamepad1.circle) {
                 shooter.setFlywheelMotorSpeed(shooter.getFlywheelTicksPerSecondForDistanceFromGoal(distance));
                 shooter.setHoodServoAngle(shooter.getServoAngleForDistanceFromGoal(distance));
+                if (gamepad1.right_bumper) {
+                    feedingServo.setPosition(0.7);
+                }
+                else {
+                    feedingServo.setPosition(0.5);
+                }
             }
             else {
                 shooter.stopMotor();
@@ -129,8 +132,6 @@ public class ShooterTuning extends LinearOpMode {
 
 
             shooter.update(iterations);
-            telemetry.addData("orient result", orientRobotResult);
-            telemetry.addData("orient action", orientRobotAction);
             telemetry.addData("iterations/s", iterations/getRuntime());
             telemetry.addData("intended speed", tickPerSecond);
             telemetry.addData("position", Arrays.toString(pose));

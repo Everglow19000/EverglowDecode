@@ -26,16 +26,26 @@ public class Shooter implements Subsystem {
     private static Servo.Direction servoDirection = Servo.Direction.REVERSE;
     private static InterpLUT servoAnglesLUT = Utils.interpLUTFromArrays( //TODO: FILL ME WITH MEASURED VALUES
             new double[]{
-                    15.1,
-                    78.8,
-                    126.7,
-                    152.2
+                    15.5,
+                    30.6,
+                    44.5,
+                    59.3,
+                    75,
+                    89.3,
+                    106.3,
+                    120.3,
+                    135.4
             },
             new double[]{
-                    10.8,
-                    36.18,
-                    36.18,
-                    36.18
+                    11,
+                    14,
+                    18,
+                    23,
+                    25,
+                    27,
+                    30,
+                    32,
+                    33
             }
     );
 
@@ -47,16 +57,26 @@ public class Shooter implements Subsystem {
     private static boolean isFlywheelInverted = true;
     private static InterpLUT flywheelSpeedsLUT = Utils.interpLUTFromArrays( //TODO: FILL ME WITH MEASURED VALUES
             new double[]{
-                    15.1,
-                    78.8,
-                    126.7,
-                    152.2
+                    15.5,
+                    30.6,
+                    44.5,
+                    59.3,
+                    75,
+                    89.3,
+                    106.3,
+                    120.3,
+                    135.4
             },
             new double[]{
                     1200,
+                    1170,
+                    1220,
+                    1270,
+                    1360,
                     1400,
-                    1700,
-                    1800
+                    1480,
+                    1600,
+                    1650
             }
     );
 

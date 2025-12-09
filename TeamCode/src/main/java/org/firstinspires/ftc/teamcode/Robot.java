@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode;
 
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
-import com.acmerobotics.roadrunner.TimeTurn;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
@@ -14,7 +13,8 @@ import org.firstinspires.ftc.teamcode.subsystems.Motif;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 
 public class Robot extends RobotBase {
-    public static Vector2d goalPose = new Vector2d(-62, -60);
+    public static Vector2d goalPoseDistance = new Vector2d(-62, -60);
+    public static Vector2d goalPoseOrientation = new Vector2d(-64, -64);
     public static Motif currentMotif;
 
     Intake intake;
@@ -37,7 +37,7 @@ public class Robot extends RobotBase {
     public Action getOrientRobotForShootAction() {
         Pose2d currentPose = drive.localizer.getPose();
         Vector2d currentVector = currentPose.position;
-        Vector2d goalPoseDiff = goalPose.minus(currentVector);
+        Vector2d goalPoseDiff = goalPoseOrientation.minus(currentVector);
         return drive.actionBuilder(currentPose)
                 .turnTo(Math.atan2(goalPoseDiff.y, goalPoseDiff.x))
                 .build();
