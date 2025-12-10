@@ -26,6 +26,7 @@ public class SpindexerTesting extends LinearOpMode {
     public static boolean feedingCycleActive = false;
     public static double feedingCycleTimeMS = 200;
     public static boolean spindexerActive = false;
+    public static boolean spindexerIntake = false;
     public static double spindexerPosition = 0;
 
     @Override
@@ -54,7 +55,13 @@ public class SpindexerTesting extends LinearOpMode {
 
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
-        double servoPos = FeedingMechanism.FeedingServoPosition.UP.position;
+        double servoPos = FeedingMechanism.FeedingServoPosition.DOWN.position;
+
+        boolean flag = false;
+
+        FeedingMechanism.SpindexerPosition shootPosition = FeedingMechanism.SpindexerPosition.SHOOT_INDEX_0;
+        FeedingMechanism.SpindexerPosition intakePosition = FeedingMechanism.SpindexerPosition.INTAKE_INDEX_0;
+
         waitForStart();
 
         while (opModeIsActive()) {
@@ -65,8 +72,17 @@ public class SpindexerTesting extends LinearOpMode {
                 servoPos = FeedingMechanism.FeedingServoPosition.DOWN.position;
             }
 
-            if (spindexerActive) {
-                spindexerServo.setPosition(spindexerPosition);
+            if (spindexerActive && gamepad1.cross && !flag) {
+                shootPosition = shootPosition.getNext();
+                intakePosition = intakePosition.getNext();
+            }
+            flag = gamepad1.cross;
+
+            if (spindexerIntake) {
+                spindexerServo.setPosition(intakePosition.position);
+            }
+            else {
+                spindexerServo.setPosition(shootPosition.position);
             }
 
             feedingServo.setPosition(servoPos);
