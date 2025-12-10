@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.everglow_library;
 
+import com.acmerobotics.roadrunner.Rotation2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.hardware.lynx.LynxServoController;
 import com.qualcomm.robotcore.hardware.PwmControl;
@@ -31,5 +32,30 @@ public class Utils {
     public static void setServoPWMRange(Servo servo, double usPulseLower, double usPulseUpper) {
         LynxServoController lynxServoController = (LynxServoController) servo.getController();
         lynxServoController.setServoPwmRange(servo.getPortNumber(), new PwmControl.PwmRange(usPulseLower, usPulseUpper));
+    }
+
+    public static Rotation2d getOptimalAngleToShoot(Vector2d goalEdgeLowerX, Vector2d goalEdgeHigherX, Vector2d botPose) {
+        if (goalEdgeLowerX.x > goalEdgeHigherX.x) {
+            return getOptimalAngleToShoot(goalEdgeHigherX, goalEdgeLowerX, botPose);
+        }
+
+        double goalLineSlope = (goalEdgeLowerX.y-goalEdgeHigherX.y)/(goalEdgeLowerX.x-goalEdgeHigherX.x);
+        double goalLineOffset = (-goalLineSlope*goalEdgeLowerX.x) + goalEdgeLowerX.y;
+
+        double goalLinePerpendicularSlope = -1.0/goalLineSlope;
+        double goalLinePerpendicularOffset = (-goalLinePerpendicularSlope*botPose.x) + botPose.y;
+
+        double closestPointX = (goalLinePerpendicularOffset - goalLineOffset)/(goalLineSlope - goalLinePerpendicularSlope);
+
+        if (closestPointX < goalEdgeLowerX.x) {
+            closestPointX = goalEdgeLowerX.x;
+        }
+        else if (closestPointX > goalEdgeHigherX.x) {
+            closestPointX = goalEdgeHigherX.x;
+        }
+
+        double closestPointY = (goalLineSlope*closestPointX) + goalLineOffset;
+
+        return Rotation2d.exp(Math.atan2(closestPointY - botPose.y, closestPointX - botPose.x));
     }
 }

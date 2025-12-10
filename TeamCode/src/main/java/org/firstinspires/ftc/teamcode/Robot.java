@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.teamcode.everglow_library.RobotBase;
 import org.firstinspires.ftc.teamcode.everglow_library.Subsystem;
+import org.firstinspires.ftc.teamcode.everglow_library.Utils;
 import org.firstinspires.ftc.teamcode.subsystems.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.Camera;
 import org.firstinspires.ftc.teamcode.subsystems.Motif;
@@ -14,7 +15,8 @@ import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 
 public class Robot extends RobotBase {
     public static Vector2d goalPoseDistance = new Vector2d(-62, -60);
-    public static Vector2d goalPoseOrientation = new Vector2d(-64, -64);
+    public static Vector2d goalEdge1 = new Vector2d(-48, -64);
+    public static Vector2d goalEdge2 = new Vector2d(-70, -48);
     public static Motif currentMotif;
 
     Intake intake;
@@ -35,11 +37,8 @@ public class Robot extends RobotBase {
         updateSubsystems(iterationCount);
     }
     public Action getOrientRobotForShootAction() {
-        Pose2d currentPose = drive.localizer.getPose();
-        Vector2d currentVector = currentPose.position;
-        Vector2d goalPoseDiff = goalPoseOrientation.minus(currentVector);
-        return drive.actionBuilder(currentPose)
-                .turnTo(Math.atan2(goalPoseDiff.y, goalPoseDiff.x))
+        return drive.actionBuilder(drive.localizer.getPose())
+                .turnTo(Utils.getOptimalAngleToShoot(goalEdge1, goalEdge2, drive.localizer.getPose().position))
                 .build();
     }
     // pose is formatted as following, since Pose2d class cannot be changed:

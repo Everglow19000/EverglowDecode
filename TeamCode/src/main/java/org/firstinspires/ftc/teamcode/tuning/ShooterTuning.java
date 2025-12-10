@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode.tuning;
 
-import static org.firstinspires.ftc.teamcode.Robot.goalPoseDistance;
-import static org.firstinspires.ftc.teamcode.Robot.goalPoseOrientation;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
@@ -16,6 +14,8 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.MecanumDrive;
+import org.firstinspires.ftc.teamcode.Robot;
+import org.firstinspires.ftc.teamcode.everglow_library.Utils;
 import org.firstinspires.ftc.teamcode.subsystems.Camera;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 
@@ -39,16 +39,13 @@ public class ShooterTuning extends LinearOpMode {
     MecanumDrive drive;
 
     public Action getOrientRobotForShootAction(Pose2d pose) {
-        Vector2d currentVector = pose.position;
-        Vector2d goalPoseDiff = goalPoseOrientation.minus(currentVector);
         return drive.actionBuilder(pose)
-                .turnTo(Math.atan2(goalPoseDiff.y, goalPoseDiff.x))
+                .turnTo(Utils.getOptimalAngleToShoot(Robot.goalEdge1, Robot.goalEdge2, pose.position))
                 .build();
     }
 
     @Override
     public void runOpMode() throws InterruptedException {
-        Vector2d goalPose = new Vector2d(-62, -60);
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         Shooter shooter = new Shooter(hardwareMap);
         Camera camera = new Camera(hardwareMap);
@@ -104,7 +101,7 @@ public class ShooterTuning extends LinearOpMode {
 //                getPoseAction = camera.getFindLocationAction(pose, 100);
 //            }
 
-            Vector2d diff = goalPoseDistance.minus(new Vector2d(pose[0], pose[1]));
+            Vector2d diff = Robot.goalPoseDistance.minus(new Vector2d(pose[0], pose[1]));
             distance = Math.sqrt(Math.pow(diff.x, 2) + Math.pow(diff.y, 2));
             if (isTuning) {
                 shooter.setFlywheelMotorSpeed(tickPerSecond);
