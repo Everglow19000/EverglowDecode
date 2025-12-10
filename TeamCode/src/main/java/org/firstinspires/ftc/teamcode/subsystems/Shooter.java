@@ -181,7 +181,7 @@ public class Shooter implements Subsystem {
     }
 
     private double clampDistance(double distance) {
-        return Math.max(15.1+0.1, Math.min(152.2-0.1, distance));
+        return Math.max(15.5+0.1, Math.min(135.4-0.1, distance));
     }
 
     public void setHoodServoAngle(double angle) {
