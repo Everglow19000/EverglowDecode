@@ -14,7 +14,12 @@ public class DriverOpMode extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-        robot = new Robot(this.hardwareMap);
+        Object isBlueObject = blackboard.get("isBlue");
+        boolean isBlue = true;
+        if (isBlueObject != null) {
+            isBlue = (boolean) isBlueObject;
+        }
+        robot = new Robot(this.hardwareMap, isBlue);
         GamepadEx gamepad = new GamepadEx(gamepad1);
 
         iterations = 0;

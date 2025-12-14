@@ -15,7 +15,8 @@ public class Robot extends RobotBase {
     public static Vector2d goalPose = new Vector2d(-62, -60);
     public static Motif currentMotif;
     Intake intake;
-    public Robot(HardwareMap hardwareMap) {
+    public Robot(HardwareMap hardwareMap, boolean isBlue) {
+        goalPose = new Vector2d(goalPose.x, goalPose.y*(isBlue ? 1 : -1));
         subsystems = new Subsystem[1];
         this.drive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
         intake = new Intake(hardwareMap);
@@ -42,6 +43,9 @@ public class Robot extends RobotBase {
     public Action getSpinUpShooterAction(double distance) {
         return null;
     }
+    public Action getStopShooterAction() {
+        return null;
+    }
     public Action getLaunchSingleArtifactAction() {
         return null;
     }
@@ -53,6 +57,12 @@ public class Robot extends RobotBase {
     }
     public Action getStopIntakeAction() {
         return intake.getStopIntakeAction();
+    }
+
+    public double calculateDistanceFromGoal() {
+        Vector2d diff = goalPose.minus(drive.localizer.getPose().position);
+
+        return Math.sqrt(Math.pow(diff.x, 2) + Math.pow(diff.y, 2));
     }
 
     public void startIntake(){ //start intake
