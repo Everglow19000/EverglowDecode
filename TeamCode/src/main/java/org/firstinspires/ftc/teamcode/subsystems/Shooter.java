@@ -216,8 +216,8 @@ public class Shooter implements Subsystem {
         return new StartUpShooterAction(distanceFromGoal);
     }
 
-    public AimHoodAction getAimHoodAction(double wantedPos) {
-        return new AimHoodAction(wantedPos);
+    public AimHoodAction getAimHoodAction(double angle) {
+        return new AimHoodAction(hoodDegreesToServoPosition(angle));
     }
 
     @Override

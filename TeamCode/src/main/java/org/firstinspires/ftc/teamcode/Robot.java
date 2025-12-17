@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -8,6 +9,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.teamcode.everglow_library.RobotBase;
 import org.firstinspires.ftc.teamcode.everglow_library.Subsystem;
 import org.firstinspires.ftc.teamcode.everglow_library.Utils;
+import org.firstinspires.ftc.teamcode.subsystems.FeedingMechanism;
 import org.firstinspires.ftc.teamcode.subsystems.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.Camera;
 import org.firstinspires.ftc.teamcode.subsystems.Motif;
@@ -22,15 +24,18 @@ public class Robot extends RobotBase {
     Intake intake;
     private Camera camera;
     private Shooter shooter;
+    private FeedingMechanism feedingMechanism;
     public Robot(HardwareMap hardwareMap) {
-        subsystems = new Subsystem[3];
+        subsystems = new Subsystem[4];
         this.drive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
         camera = new Camera(hardwareMap);
         intake = new Intake(hardwareMap);
         shooter = new Shooter(hardwareMap);
+        feedingMechanism = new FeedingMechanism(hardwareMap, Motif.);
         subsystems[0] = intake;
         subsystems[1] = camera;
         subsystems[2] = shooter;
+        subsystems[3] = feedingMechanism;
     }
     @Override
     public void update(int iterationCount) {
@@ -51,7 +56,10 @@ public class Robot extends RobotBase {
         return camera.getDetermineMotifAction(motif);
     }
     public Action getSpinUpShooterAction(double distance) {
-        return null;
+        return new ParallelAction(
+                shooter.getStartUpShooterAction(distance),
+                shooter.getAimHoodAction(shooter.getServoAngleForDistanceFromGoal(distance))
+        );
     }
     public Action getLaunchSingleArtifactAction() {
         return null;
