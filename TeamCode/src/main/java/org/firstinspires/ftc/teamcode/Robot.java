@@ -25,17 +25,27 @@ public class Robot extends RobotBase {
     private Camera camera;
     private Shooter shooter;
     private FeedingMechanism feedingMechanism;
-    public Robot(HardwareMap hardwareMap) {
+    public Robot(HardwareMap hardwareMap, boolean isBlue, Motif motif) {
+        goalEdge1 = new Vector2d(goalEdge1.x, goalEdge1.y*(isBlue ? 1 : -1));
+        goalEdge2 = new Vector2d(goalEdge2.x, goalEdge2.y*(isBlue ? 1 : -1));
+        goalPoseDistance = new Vector2d(goalPoseDistance.x, goalPoseDistance.y*(isBlue ? 1 : -1));
+
         subsystems = new Subsystem[4];
+
         this.drive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
         camera = new Camera(hardwareMap);
         intake = new Intake(hardwareMap);
         shooter = new Shooter(hardwareMap);
-        feedingMechanism = new FeedingMechanism(hardwareMap, Motif.);
+        feedingMechanism = new FeedingMechanism(hardwareMap, motif);
+
         subsystems[0] = intake;
         subsystems[1] = camera;
         subsystems[2] = shooter;
         subsystems[3] = feedingMechanism;
+    }
+
+    public Robot(HardwareMap hardwareMap, boolean isBlue) {
+        this(hardwareMap, isBlue, Motif.NONE);
     }
     @Override
     public void update(int iterationCount) {
@@ -49,7 +59,7 @@ public class Robot extends RobotBase {
     // pose is formatted as following, since Pose2d class cannot be changed:
     // [x, y, heading]
     public Action getLocalizeWithApriltagAction(double[] pose) {
-        return camera.getFindLocationAction(pose, 100);
+        return camera.getFindLocationAction(pose, 200);
     }
     // the contents of motif[0] will be changed according to the Motif on the obelisk
     public Action getOrderArtifactsAction(Motif[] motif) {
@@ -60,6 +70,9 @@ public class Robot extends RobotBase {
                 shooter.getStartUpShooterAction(distance),
                 shooter.getAimHoodAction(shooter.getServoAngleForDistanceFromGoal(distance))
         );
+    }
+    public Action getStopShooterAction() {
+        return null;
     }
     public Action getLaunchSingleArtifactAction() {
         return null;
@@ -72,6 +85,12 @@ public class Robot extends RobotBase {
     }
     public Action getStopIntakeAction() {
         return intake.getStopIntakeAction();
+    }
+
+    public double calculateDistanceFromGoal() {
+        Vector2d diff = goalPoseDistance.minus(drive.localizer.getPose().position);
+
+        return Math.sqrt(Math.pow(diff.x, 2) + Math.pow(diff.y, 2));
     }
 
     public void startIntake(){ //start intake
