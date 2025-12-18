@@ -106,6 +106,7 @@ public class ShooterTuning extends LinearOpMode {
             if (isTuning) {
                 shooter.setFlywheelMotorSpeed(tickPerSecond);
                 shooter.setHoodServoAngle(servoAngle);
+                shooter.flywheelPIDF.setPIDF(p, i, d, f);
                 if (feedingServoUp) {
                     feedingServo.setPosition(0.7);
                 }

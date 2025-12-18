@@ -104,7 +104,7 @@ public class Shooter implements Subsystem {
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
             flywheelMotor.set(flywheelPIDF.calculate(getFlywheelMotorCurrentTicksPerSecond(), desiredFlywheelSpeed));
 
-            return !isFlywheelFinishedSpinning();
+            return true;
         }
     }
 
@@ -124,11 +124,28 @@ public class Shooter implements Subsystem {
         }
     }
 
+    public class WaitUntilShooterSpinupAction implements Action {
+        private double maxTimeToWait = 2000;
+        private double startTime = -1;
+
+        private WaitUntilShooterSpinupAction() {
+        }
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            if (startTime <= 0) {
+                startTime = System.currentTimeMillis();
+            }
+
+            return (System.currentTimeMillis() - startTime) <= maxTimeToWait || !isFlywheelFinishedSpinning();
+        }
+    }
+
 
     MotorEx flywheelMotor;
     Servo hoodServo;
     public PIDFController flywheelPIDF = new PIDFController(0.025, 0.2, 0, 0.0001);
-    private double desiredFlywheelSpeed = 0; // [ticks/s]
+    public double desiredFlywheelSpeed = 0; // [ticks/s]
     private double targetServoPosition = 0;
 
 
@@ -214,6 +231,9 @@ public class Shooter implements Subsystem {
 
     public StartUpShooterAction getStartUpShooterAction(double distanceFromGoal) {
         return new StartUpShooterAction(distanceFromGoal);
+    }
+    public WaitUntilShooterSpinupAction getWaitUntilShooterSpinupAction() {
+        return new WaitUntilShooterSpinupAction();
     }
 
     public AimHoodAction getAimHoodAction(double angle) {

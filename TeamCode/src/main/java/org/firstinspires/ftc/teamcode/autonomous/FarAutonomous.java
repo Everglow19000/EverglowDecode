@@ -7,7 +7,6 @@ import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
 import com.acmerobotics.roadrunner.Vector2d;
-import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.MecanumDrive;
@@ -49,9 +48,9 @@ public class FarAutonomous extends LinearOpMode {
                 robot.getOrientRobotForShootAction(),
                 robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
 
-                robot.getLaunchSingleArtifactAction(),
-                robot.getLaunchSingleArtifactAction(),
-                robot.getLaunchSingleArtifactAction(),
+                robot.getLaunchAllArtifactsAction(),
+                robot.getLaunchAllArtifactsAction(),
+                robot.getLaunchAllArtifactsAction(),
 
                 robot.getStopShooterAction(),
 
@@ -67,9 +66,9 @@ public class FarAutonomous extends LinearOpMode {
         currentAction = new SequentialAction(
                 robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
 
-                robot.getLaunchSingleArtifactAction(),
-                robot.getLaunchSingleArtifactAction(),
-                robot.getLaunchSingleArtifactAction(),
+                robot.getLaunchAllArtifactsAction(),
+                robot.getLaunchAllArtifactsAction(),
+                robot.getLaunchAllArtifactsAction(),
 
                 robot.getStartIntakeAction(),
                 MoveToArtifact2,
@@ -83,9 +82,9 @@ public class FarAutonomous extends LinearOpMode {
         currentAction = new SequentialAction(
                 robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
 
-                robot.getLaunchSingleArtifactAction(),
-                robot.getLaunchSingleArtifactAction(),
-                robot.getLaunchSingleArtifactAction()
+                robot.getLaunchAllArtifactsAction(),
+                robot.getLaunchAllArtifactsAction(),
+                robot.getLaunchAllArtifactsAction()
         );
         while (getRuntime() < 28 && !currentAction.run(new TelemetryPacket())) {
 

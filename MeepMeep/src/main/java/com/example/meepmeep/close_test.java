@@ -22,6 +22,8 @@ public class close_test {
     myBot.runAction(myBot.getDrive().actionBuilder(new Pose2d(-50, -48, Math.toRadians(225)))
                     .setTangent(Math.toRadians(45))
                     .waitSeconds(8)
+                            .splineToSplineHeading(new Pose2d(-36, 18, Math.toRadians(-135)), Math.PI/2.0)
+                            .waitSeconds(1)
                     //.strafeTo(new Vector2d(-30,-28))
             //.waitSeconds(1)
             //.setTangent(Math.toRadians(45))

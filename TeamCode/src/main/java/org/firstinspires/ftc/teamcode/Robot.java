@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
@@ -23,7 +24,7 @@ public class Robot extends RobotBase {
 
     Intake intake;
     private Camera camera;
-    private Shooter shooter;
+    public Shooter shooter;
     private FeedingMechanism feedingMechanism;
     public Robot(HardwareMap hardwareMap, boolean isBlue, Motif motif) {
         goalEdge1 = new Vector2d(goalEdge1.x, goalEdge1.y*(isBlue ? 1 : -1));
@@ -37,6 +38,10 @@ public class Robot extends RobotBase {
         intake = new Intake(hardwareMap);
         shooter = new Shooter(hardwareMap);
         feedingMechanism = new FeedingMechanism(hardwareMap, motif);
+
+        camera.start();
+
+        currentMotif = motif;
 
         subsystems[0] = intake;
         subsystems[1] = camera;
@@ -56,13 +61,15 @@ public class Robot extends RobotBase {
                 .turnTo(Utils.getOptimalAngleToShoot(goalEdge1, goalEdge2, drive.localizer.getPose().position))
                 .build();
     }
+
     // pose is formatted as following, since Pose2d class cannot be changed:
     // [x, y, heading]
     public Action getLocalizeWithApriltagAction(double[] pose) {
         return camera.getFindLocationAction(pose, 200);
     }
+
     // the contents of motif[0] will be changed according to the Motif on the obelisk
-    public Action getOrderArtifactsAction(Motif[] motif) {
+    public Action getMotifFromObeliskAction(Motif[] motif) {
         return camera.getDetermineMotifAction(motif);
     }
     public Action getSpinUpShooterAction(double distance) {
@@ -72,13 +79,25 @@ public class Robot extends RobotBase {
         );
     }
     public Action getStopShooterAction() {
-        return null;
+        return shooter.getStopShooterSpinAction();
     }
-    public Action getLaunchSingleArtifactAction() {
-        return null;
+    public Action getLaunchAllArtifactsAction() {
+        FeedingMechanism.SpindexerPosition[] shootingSequence = feedingMechanism.getShootingSequence();
+        SequentialAction action = new SequentialAction(
+                shooter.getWaitUntilShooterSpinupAction(),
+                feedingMechanism.getFeedSingleArtifactAction(shootingSequence[0])
+        );
+        for (int i = 1; i < shootingSequence.length; i++) {
+            action = new SequentialAction(
+                    action,
+                    shooter.getWaitUntilShooterSpinupAction(),
+                    feedingMechanism.getFeedSingleArtifactAction(shootingSequence[i])
+            );
+        }
+        return action;
     }
-    public Action getMotifFromObeliskAction() {
-        return null;
+    public Action getScanArtifactColorsAction() {
+        return feedingMechanism.getScanArtifactColorsAction();
     }
     public Action getStartIntakeAction() {
         return intake.getStartIntakeAction();
@@ -93,26 +112,29 @@ public class Robot extends RobotBase {
         return Math.sqrt(Math.pow(diff.x, 2) + Math.pow(diff.y, 2));
     }
 
+    public void setMotif(Motif motif) {
+        feedingMechanism.setMotif(motif);
+        currentMotif = motif;
+    }
+
     public void startIntake(){ //start intake
         intake.startIntake();
+        feedingMechanism.startIntaking();
     }
     public void stopIntake(){ //stop intake
         intake.stopIntake();
+        feedingMechanism.stopIntaking();
     }
 
-    public void startBelt(){ //start belt
-
-    }
-
-    public void stopBelt(){ //stop belt
-
+    public void setSpindexerPosition(FeedingMechanism.SpindexerPosition position) {
+        feedingMechanism.setSpindexerPosition(position);
     }
 
     public void prepareToLaunch() { //starts to spin the launcher based on the distance to the target and directs the robot to the target
     }
 
     public boolean isReadyToLaunch() { //checks if the launcher is ready to launch
-        return true;
+        return Math.abs(drive.localizer.getPose().heading.toDouble() - Utils.getOptimalAngleToShoot(goalEdge1, goalEdge2, drive.localizer.getPose().position).toDouble()) <= 0.2 && shooter.isFlywheelFinishedSpinning();
     }
 
     public void launchSingle() { //launches a single ball
