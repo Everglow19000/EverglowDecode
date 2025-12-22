@@ -5,8 +5,8 @@ import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import org.firstinspires.ftc.teamcode.everglow_library.Utils;
 
 public enum ArtifactColor {
-    GREEN(new double[] {0.28, 1.0, 0.7}),
-    PURPLE (new double[] {0.63, 0.74, 1.0}),
+    GREEN(new double[] {0.3, 1.0, 0.75}),
+    PURPLE (new double[] {0.55, 0.66, 1.0}),
     NONE   (new double[] {0,0,0});
 
     public final double[] color;

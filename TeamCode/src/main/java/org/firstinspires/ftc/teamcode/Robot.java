@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.teamcode.everglow_library.RobotBase;
 import org.firstinspires.ftc.teamcode.everglow_library.Subsystem;
 import org.firstinspires.ftc.teamcode.everglow_library.Utils;
+import org.firstinspires.ftc.teamcode.subsystems.ArtifactColor;
 import org.firstinspires.ftc.teamcode.subsystems.FeedingMechanism;
 import org.firstinspires.ftc.teamcode.subsystems.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.Camera;
@@ -17,26 +18,45 @@ import org.firstinspires.ftc.teamcode.subsystems.Motif;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 
 public class Robot extends RobotBase {
-    public static Vector2d goalPoseDistance = new Vector2d(-62, -60);
-    public static Vector2d goalEdge1 = new Vector2d(-48, -64);
-    public static Vector2d goalEdge2 = new Vector2d(-70, -48);
+    public static Vector2d goalPoseDistanceStatic = new Vector2d(-62, -60);
+    public static Vector2d goalPoseOrientationStatic = new Vector2d(-70, -65);
+    public static Vector2d goalEdge1Static = new Vector2d(-52, -61);
+    public static Vector2d goalEdge2Static = new Vector2d(-66, -51);
+    private Vector2d goalPoseDistance;
+    public Vector2d goalPoseOrientation;
+    private Vector2d goalEdge1;
+    private Vector2d goalEdge2;
+
+
     public static Motif currentMotif;
+    private static Pose2d lastActivationEndPose = null;
 
     Intake intake;
     private Camera camera;
     public Shooter shooter;
-    private FeedingMechanism feedingMechanism;
+    public FeedingMechanism feedingMechanism;
+
+    public boolean usedLastPose = false;
+    private int iterationCount = 0;
     public Robot(HardwareMap hardwareMap, boolean isBlue, Motif motif) {
-        goalEdge1 = new Vector2d(goalEdge1.x, goalEdge1.y*(isBlue ? 1 : -1));
-        goalEdge2 = new Vector2d(goalEdge2.x, goalEdge2.y*(isBlue ? 1 : -1));
-        goalPoseDistance = new Vector2d(goalPoseDistance.x, goalPoseDistance.y*(isBlue ? 1 : -1));
+        goalEdge1 = new Vector2d(goalEdge1Static.x, goalEdge1Static.y*(isBlue ? 1 : -1));
+        goalEdge2 = new Vector2d(goalEdge2Static.x, goalEdge2Static.y*(isBlue ? 1 : -1));
+        goalPoseDistance = new Vector2d(goalPoseDistanceStatic.x, goalPoseDistanceStatic.y*(isBlue ? 1 : -1));
+        goalPoseOrientation = new Vector2d(goalPoseOrientationStatic.x, goalPoseOrientationStatic.y*(isBlue ? 1 : -1));
 
         subsystems = new Subsystem[4];
 
-        this.drive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
+        if (lastActivationEndPose == null) {
+            this.drive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
+            usedLastPose = false;
+        }
+        else {
+            this.drive = new MecanumDrive(hardwareMap, lastActivationEndPose);
+            usedLastPose = true;
+        }
         camera = new Camera(hardwareMap);
         intake = new Intake(hardwareMap);
-        shooter = new Shooter(hardwareMap);
+        shooter = new Shooter(hardwareMap, this);
         feedingMechanism = new FeedingMechanism(hardwareMap, motif);
 
         camera.start();
@@ -52,14 +72,23 @@ public class Robot extends RobotBase {
     public Robot(HardwareMap hardwareMap, boolean isBlue) {
         this(hardwareMap, isBlue, Motif.NONE);
     }
-    @Override
-    public void update(int iterationCount) {
-        updateSubsystems(iterationCount);
+    public void update() {
+        iterationCount++;
+        updateSubsystems();
+        if (feedingMechanism.isNowStoppedIntaking()) {
+            stopIntake();
+        }
     }
     public Action getOrientRobotForShootAction() {
+        Vector2d diff = goalPoseOrientation.minus(drive.localizer.getPose().position);
         return drive.actionBuilder(drive.localizer.getPose())
-                .turnTo(Utils.getOptimalAngleToShoot(goalEdge1, goalEdge2, drive.localizer.getPose().position))
+//                .turnTo(Utils.getOptimalAngleToShoot(goalEdge1, goalEdge2, drive.localizer.getPose().position))
+                .turnTo(Math.atan2(diff.y, diff.x))
                 .build();
+    }
+
+    public void setEndPose(Pose2d pose) {
+        lastActivationEndPose = pose;
     }
 
     // pose is formatted as following, since Pose2d class cannot be changed:
@@ -83,18 +112,23 @@ public class Robot extends RobotBase {
     }
     public Action getLaunchAllArtifactsAction() {
         FeedingMechanism.SpindexerPosition[] shootingSequence = feedingMechanism.getShootingSequence();
-        SequentialAction action = new SequentialAction(
-                shooter.getWaitUntilShooterSpinupAction(),
-                feedingMechanism.getFeedSingleArtifactAction(shootingSequence[0])
-        );
-        for (int i = 1; i < shootingSequence.length; i++) {
-            action = new SequentialAction(
-                    action,
+        if (shootingSequence.length != 0) {
+            SequentialAction action = new SequentialAction(
                     shooter.getWaitUntilShooterSpinupAction(),
-                    feedingMechanism.getFeedSingleArtifactAction(shootingSequence[i])
+                    feedingMechanism.getMoveSpindexerAction(shootingSequence[0]),
+                    feedingMechanism.getFeedSingleArtifactAction(shootingSequence[0])
             );
+            for (int i = 1; i < shootingSequence.length; i++) {
+                action = new SequentialAction(
+                        action,
+                        shooter.getWaitUntilShooterSpinupAction(),
+                        feedingMechanism.getMoveSpindexerAction(shootingSequence[i]),
+                        feedingMechanism.getFeedSingleArtifactAction(shootingSequence[i])
+                );
+            }
+            return action;
         }
-        return action;
+        return new ParallelAction();
     }
     public Action getScanArtifactColorsAction() {
         return feedingMechanism.getScanArtifactColorsAction();
@@ -106,6 +140,9 @@ public class Robot extends RobotBase {
         return intake.getStopIntakeAction();
     }
 
+    public String getFeedingMechanismContents() {
+        return feedingMechanism.getStoredArtifacts();
+    }
     public double calculateDistanceFromGoal() {
         Vector2d diff = goalPoseDistance.minus(drive.localizer.getPose().position);
 
@@ -130,14 +167,7 @@ public class Robot extends RobotBase {
         feedingMechanism.setSpindexerPosition(position);
     }
 
-    public void prepareToLaunch() { //starts to spin the launcher based on the distance to the target and directs the robot to the target
-    }
-
-    public boolean isReadyToLaunch() { //checks if the launcher is ready to launch
-        return Math.abs(drive.localizer.getPose().heading.toDouble() - Utils.getOptimalAngleToShoot(goalEdge1, goalEdge2, drive.localizer.getPose().position).toDouble()) <= 0.2 && shooter.isFlywheelFinishedSpinning();
-    }
-
-    public void launchSingle() { //launches a single ball
-
+    public void stopShooterMotor() {
+        shooter.stopMotor();
     }
 }

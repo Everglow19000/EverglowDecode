@@ -14,16 +14,16 @@ public abstract class RobotBase {
 
     // all the subsystems
     public Subsystem[] subsystems;
-
+    public int iterationCount;
     // calls the update function on all subsystems
-    public void updateSubsystems(int iterationCount) {
+    public void updateSubsystems() {
         for (int i = 0; i < subsystems.length; i++) {
             subsystems[i].update(iterationCount);
         }
     }
 
     // updates everything, including subsystems. intended for logging and the likes
-    public abstract void update(int iterationCount);
+    public abstract void update();
 
     public double squareKeepingSymbol(double num) {
         if (num > 0) {

@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.subsystems.Intake;
 
-@TeleOp(name="IntakeTesting")
+@TeleOp(name="IntakeTesting", group="Tests")
 @Config
 public class IntakeTesting extends LinearOpMode {
     public static double powerToUse = 0.1;

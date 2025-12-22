@@ -42,7 +42,7 @@ public class Intake implements Subsystem {
             return System.currentTimeMillis() - startTime < timeUntilConsideredDoneMilliseconds;
         }
     }
-    public static double INTAKE_POWER = 0.6;
+    public static double INTAKE_POWER = 1.0;
     private DcMotorSimple intakeMotor;
 
     public Intake(HardwareMap hardwareMap) {

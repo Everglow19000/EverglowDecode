@@ -6,6 +6,7 @@ import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.RaceAction;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
@@ -35,18 +36,17 @@ public class CloseAutonomous {
 
         opMode.waitForStart();
 
-        robot.setSpindexerPosition(FeedingMechanism.SpindexerPosition.INTAKE_INDEX_0);
-
-        opMode.sleep(5000);
-
         double[] position = new double[3];
 
         Actions.runBlocking(
-                new ParallelAction(
+                new SequentialAction(
                         robot.getLocalizeWithApriltagAction(position),
                         robot.getScanArtifactColorsAction()
                 )
         );
+
+        opMode.telemetry.addData("stored", robot.getFeedingMechanismContents());
+        opMode.telemetry.update();
 
         Pose2d startingPlace = new Pose2d(position[0], position[1], position[2]);
 
@@ -65,7 +65,7 @@ public class CloseAutonomous {
                 .splineTo(new Vector2d(-30, -28 * isBlueValue), Math.toRadians(225 * isBlueValue));
 
         TrajectoryActionBuilder b_MoveToOutOfLine = b_MoveToShootingPlace.endTrajectory().fresh()
-                .strafeTo(new Vector2d(0, -28 * isBlueValue));
+                .strafeTo(new Vector2d(-60, -18 * isBlueValue));
 
 
         Action MoveToScanObelisk = b_MoveToScanObelisk.build();
@@ -82,12 +82,16 @@ public class CloseAutonomous {
                 )
         );
 
+        robot.setMotif(motifHolder[0]);
+
         Action currentAction = null;
 
         boolean actionRunResult = false;
         int actionToProcess = 0;
         int iterationCount = 0;
         while (opMode.opModeIsActive()) {
+            robot.update();
+            iterationCount++;
             if (!actionRunResult) {
                 if (actionToProcess == 0) {
                     currentAction = new SequentialAction(
@@ -98,28 +102,28 @@ public class CloseAutonomous {
                                     robot.getLaunchAllArtifactsAction()
                             ),
 
-                            robot.getStopShooterAction(),
+                            robot.getStopShooterAction()
 
-                            robot.getStartIntakeAction(),
-                            MoveToArtifact1,
-                            robot.getStopIntakeAction(),
-
-                            MoveToShootingPlace
+//                            robot.getStartIntakeAction(),
+//                            MoveToArtifact1,
+//                            robot.getStopIntakeAction(),
+//
+//                            MoveToShootingPlace
                     );
                     actionToProcess++;
                 }
-                else if (actionToProcess == 1) {
-                    currentAction = new SequentialAction(
-                            robot.getOrientRobotForShootAction(),
-                            robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
-
-                            new RaceAction(
-                                    robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
-                                    robot.getLaunchAllArtifactsAction()
-                            )
-                    );
-                    actionToProcess++;
-                }
+//                else if (actionToProcess == 1) {
+//                    currentAction = new SequentialAction(
+//                            robot.getOrientRobotForShootAction(),
+//                            robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
+//
+//                            new RaceAction(
+//                                    robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
+//                                    robot.getLaunchAllArtifactsAction()
+//                            )
+//                    );
+//                    actionToProcess++;
+//                }
                 else {
                     currentAction = new ParallelAction(
                             robot.getStopShooterAction(),
@@ -128,7 +132,7 @@ public class CloseAutonomous {
                 }
             }
 
-            if (opMode.getRuntime() >= 28.0) {
+            if (opMode.getRuntime() >= 25.0) {
                 actionToProcess = 2;
                 actionRunResult = false;
             }
@@ -138,12 +142,14 @@ public class CloseAutonomous {
                 }
             }
 
-            robot.update(iterationCount);
-            iterationCount++;
+            if (actionToProcess >= 1 && !actionRunResult && currentAction == null) {
+                robot.drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0), 0));
+            }
 
-            opMode.telemetry.addData("flywheel speed", robot.shooter.getFlywheelMotorCurrentTicksPerSecond());
-            opMode.telemetry.addData("desired speed", robot.shooter.desiredFlywheelSpeed);
+
             opMode.telemetry.update();
         }
+
+        robot.setEndPose(drive.localizer.getPose());
     }
 }

@@ -19,13 +19,13 @@ public class first_test {
             .setDimensions(18,18)
             .build();
 
-    myBot.runAction(myBot.getDrive().actionBuilder(new Pose2d(63, 9, Math.toRadians(180)))
-                    .waitSeconds(8)
-            .splineTo(new Vector2d(36,40), Math.toRadians(90))
-            .splineToSplineHeading(new Pose2d(52,15, Math.toRadians(180)), Math.toRadians(-180))
-                    .waitSeconds(8)
-            .splineTo(new Vector2d(12,30), Math.toRadians(90))
-            .splineTo(new Vector2d(12,40), Math.toRadians(90))
+    myBot.runAction(myBot.getDrive().actionBuilder(new Pose2d(61.1, -20.7, Math.toRadians(180)))
+//                    .waitSeconds(8)
+//            .splineTo(new Vector2d(36,40), Math.toRadians(90))
+//            .splineToSplineHeading(new Pose2d(52,15, Math.toRadians(180)), Math.toRadians(-180))
+//                    .waitSeconds(8)
+//            .splineTo(new Vector2d(12,30), Math.toRadians(90))
+            .splineTo(new Vector2d(36,-24), Math.toRadians(180))
             .build());
 
     meepMeep.setBackground(MeepMeep.Background.FIELD_DECODE_JUICE_DARK)

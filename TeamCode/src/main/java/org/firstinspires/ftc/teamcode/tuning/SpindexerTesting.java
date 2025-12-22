@@ -14,7 +14,7 @@ import org.firstinspires.ftc.teamcode.subsystems.Motif;
 
 import java.util.Arrays;
 
-@TeleOp(name="SpindexerTesting")
+@TeleOp(name="SpindexerTesting", group="Tests")
 @Config
 public class SpindexerTesting extends LinearOpMode {
 
