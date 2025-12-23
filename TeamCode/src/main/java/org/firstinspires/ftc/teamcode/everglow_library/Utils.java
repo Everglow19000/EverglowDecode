@@ -59,6 +59,11 @@ public class Utils {
         return Rotation2d.exp(Math.atan2(closestPointY - botPose.y, closestPointX - botPose.x));
     }
 
+    public static double getOptimalAngleToShoot(Vector2d goalPose, Vector2d botPose) {
+        Vector2d diff = goalPose.minus(botPose);
+        return Math.atan2(diff.y, diff.x);
+    }
+
     public static double[] normalizeArray(double[] arr) {
         boolean flag = false;
         double max = 0;
@@ -76,7 +81,7 @@ public class Utils {
     }
 
     public static boolean areNormalizedRGBArraysSimilar(double[] color1, double[] color2) {
-        double tolerance = 0.05;
+        double tolerance = 0.1;
         return getDistanceOf3dVectors(color1, color2) <= tolerance;
     }
 

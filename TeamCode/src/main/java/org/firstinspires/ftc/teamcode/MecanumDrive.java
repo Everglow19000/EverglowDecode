@@ -38,9 +38,12 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
+import com.seattlesolvers.solverslib.controller.PIDController;
+import com.seattlesolvers.solverslib.controller.PIDFController;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+import org.firstinspires.ftc.teamcode.everglow_library.Utils;
 import org.firstinspires.ftc.teamcode.messages.DriveCommandMessage;
 import org.firstinspires.ftc.teamcode.messages.MecanumCommandMessage;
 import org.firstinspires.ftc.teamcode.messages.MecanumLocalizerInputsMessage;
@@ -92,6 +95,8 @@ public final class MecanumDrive {
     }
 
     public static Params PARAMS = new Params();
+    public static double holdHeadingP = 1.5;
+    public static double holdHeadingD = 0;
 
     public final MecanumKinematics kinematics = new MecanumKinematics(
             PARAMS.inPerTick * PARAMS.trackWidthTicks, PARAMS.inPerTick / PARAMS.lateralInPerTick);
@@ -451,13 +456,57 @@ public final class MecanumDrive {
         }
     }
 
+    public final class HoldHeadingAction implements Action {
+        Robot robot;
+        PIDController controller;
+        private HoldHeadingAction(Robot robot) {
+            this.robot = robot;
+            controller = new PIDController(holdHeadingP, 0, holdHeadingD);
+        }
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            updatePoseEstimate();
+            setDrivePowers(
+                    new PoseVelocity2d(
+                            new Vector2d(0,0),
+                            controller.calculate(localizer.getPose().heading.toDouble(), Utils.getOptimalAngleToShoot(robot.goalPoseOrientation, localizer.getPose().position))
+                    )
+            );
+            return true;
+        }
+    }
+
+    public final class StopMovingAction implements Action {
+        private StopMovingAction() {
+        }
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            setDrivePowers(
+                    new PoseVelocity2d(
+                            new Vector2d(0,0),
+                            0
+                    )
+            );
+            return false;
+        }
+    }
+
+    public HoldHeadingAction getHoldHeadingAction(Robot robot) {
+        return new HoldHeadingAction(robot);
+    }
+
+    public StopMovingAction getStopMovingAction() {
+        return new StopMovingAction();
+    }
+
     public PoseVelocity2d updatePoseEstimate() {
         PoseVelocity2d vel = localizer.update();
         poseHistory.add(localizer.getPose());
         
-//        while (poseHistory.size() > 100) {
-//            poseHistory.removeFirst();
-//        }
+        while (poseHistory.size() > 100) {
+            poseHistory.removeFirst();
+        }
 
         estimatedPoseWriter.write(new PoseMessage(localizer.getPose()));
         

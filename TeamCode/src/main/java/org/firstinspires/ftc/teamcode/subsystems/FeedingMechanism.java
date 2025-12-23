@@ -159,7 +159,7 @@ public class FeedingMechanism implements Subsystem {
 
     public class ScanCurrentArtifactAction implements Action {
         private double noneSeenCount = 0;
-        private final double noneSeenThreshold = 20;
+        private final double noneSeenThreshold = 30;
         private ScanCurrentArtifactAction() {
 
         }
@@ -184,11 +184,15 @@ public class FeedingMechanism implements Subsystem {
     public class MoveSpindexerAction implements Action {
         private double currentPosition;
         private SpindexerPosition targetPosition;
-        private final double stepSize = 0.003;
+        private double stepSize = 0.003;
         private boolean hasStarted = false;
         private boolean isAddPosition;
-        private MoveSpindexerAction(SpindexerPosition targetPosition) {
+        private MoveSpindexerAction(SpindexerPosition targetPosition, double stepSize) {
+            this.stepSize = stepSize;
             this.targetPosition = targetPosition;
+        }
+        private MoveSpindexerAction(SpindexerPosition targetPosition) {
+            this(targetPosition, 0.003);
         }
 
         @Override
@@ -229,6 +233,10 @@ public class FeedingMechanism implements Subsystem {
             }
         }
     }
+
+//    public class SetIntakeAction implements Action {
+//
+//    }
 
     // servo that pushes artifacts into the shooter
     public Servo feedingServo;
@@ -487,7 +495,7 @@ public class FeedingMechanism implements Subsystem {
                 currIndexStored = SpindexerPosition.SHOOT_INDEX_0;
             }
             for (int i = 0; i < result.length; i++) {
-                while (storedArtifacts[currIndexStored.getSelectedArrayIndex()] == ArtifactColor.NONE) {
+                while (storedArtifacts[currIndexStored.getSelectedArrayIndex()] == null) {
                     currIndexStored = currIndexStored.getNext();
                 }
                 result[i] = currIndexStored;

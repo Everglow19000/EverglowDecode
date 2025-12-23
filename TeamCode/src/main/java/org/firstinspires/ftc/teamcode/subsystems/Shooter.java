@@ -63,7 +63,7 @@ public class Shooter implements Subsystem {
                     1360,
                     1480,
                     1650,
-                    1650
+                    1550
             }
     );
 

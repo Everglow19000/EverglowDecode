@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.teleop;
 
 import androidx.annotation.NonNull;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
@@ -15,23 +16,31 @@ import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.teamcode.MecanumDrive;
 import org.firstinspires.ftc.teamcode.Robot;
+import org.firstinspires.ftc.teamcode.everglow_library.Utils;
+import org.firstinspires.ftc.teamcode.subsystems.Motif;
 
 @TeleOp(name="DriverOpMode", group="Driving")
+@Config
 public class DriverOpMode extends LinearOpMode {
+    public static double holdHeadingP = MecanumDrive.holdHeadingP;
+    public static double holdHeadingD = MecanumDrive.holdHeadingD;
     Robot robot;
     int iterations;
 
     public class UpdateRobotPoseAction implements Action {
         double[] pose;
+        Robot robot;
 
-        public UpdateRobotPoseAction(double[] pose) {
+        public UpdateRobotPoseAction(Robot robot, double[] pose) {
+            this.robot = robot;
             this.pose = pose;
         }
 
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-            robot.drive.localizer.setPose(new Pose2d(pose[0], pose[1], pose[2]));
+            this.robot.drive.localizer.setPose(new Pose2d(pose[0], pose[1], pose[2]));
             return false;
         }
     }
@@ -54,16 +63,19 @@ public class DriverOpMode extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         Object isBlueObject = blackboard.get("isBlue");
         boolean isBlue = false;
-//        if (isBlueObject != null) {
-//            isBlue = (boolean) isBlueObject;
-//        }
-        robot = new Robot(this.hardwareMap, isBlue);
+        if (isBlueObject != null) {
+            isBlue = (boolean) isBlueObject;
+        }
+        Robot robot = new Robot(hardwareMap, isBlue, false, Motif.NONE);
 
         boolean driveAvailable = true;
         boolean shooterAvailable = true;
         boolean spindexerAvailable = true;
 
         double[] position = new double[3];
+        Motif[] motifs = new Motif[1];
+
+        motifs[0] = Motif.NONE;
 
         GamepadEx gamepad = new GamepadEx(gamepad1);
 
@@ -71,15 +83,17 @@ public class DriverOpMode extends LinearOpMode {
 
         waitForStart();
 
-        if (!robot.usedLastPose) {
-            Actions.runBlocking(robot.getLocalizeWithApriltagAction(position));
-            robot.drive.localizer.setPose(new Pose2d(position[0], position[1], position[2]));
-        }
+//        if (!robot.usedLastPose) {
+//            Actions.runBlocking(robot.getLocalizeWithApriltagAction(position));
+//            robot.drive.localizer.setPose(new Pose2d(position[0], position[1], position[2]));
+//        }
 
 
         while (opModeIsActive()) {
             robot.update();
             gamepad.readButtons();
+            MecanumDrive.holdHeadingP = holdHeadingP;
+            MecanumDrive.holdHeadingD = holdHeadingD;
 
             if (robot.feedingMechanism.isNowStoppedIntaking()) {
                 gamepad.gamepad.runRumbleEffect(endSpindexerActionRumble);
@@ -92,18 +106,17 @@ public class DriverOpMode extends LinearOpMode {
                 currentAction = new SequentialAction(
                         robot.getOrientRobotForShootAction(),
                         new RaceAction(
+                                robot.drive.getHoldHeadingAction(robot),
                                 robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
                                 robot.getLaunchAllArtifactsAction()
                         ),
+                        robot.drive.getStopMovingAction(),
                         robot.getStopShooterAction()
                 );
             }
             else if (gamepad.wasJustPressed(GamepadKeys.Button.SQUARE)) {
                 driveAvailable = false;
-                currentAction = new SequentialAction(
-                        robot.getLocalizeWithApriltagAction(position),
-                        new UpdateRobotPoseAction(position)
-                );
+                currentAction = robot.getMotifFromObeliskAction(motifs);
             }
             else if (gamepad.wasJustPressed(GamepadKeys.Button.TRIANGLE)) {
                 spindexerAvailable = false;
@@ -134,6 +147,7 @@ public class DriverOpMode extends LinearOpMode {
             }
             if (currentAction != null && !currentAction.run(new TelemetryPacket())) {
                 gamepad.gamepad.runRumbleEffect(endGenericActionRumble);
+                robot.setMotif(motifs[0]);
                 currentAction = null;
                 driveAvailable = true;
                 shooterAvailable = true;

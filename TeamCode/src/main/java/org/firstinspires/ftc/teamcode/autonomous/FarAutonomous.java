@@ -29,19 +29,29 @@ public class FarAutonomous {
         blackboard.put("isBlue", isBlue);
         int isBlueValue = isBlue ? 1 : -1;
 
-        Robot robot = new Robot(opMode.hardwareMap, isBlue);
+        Robot robot = new Robot(opMode.hardwareMap, isBlue, true, Motif.NONE);
+
+
+        while (opMode.opModeInInit() && !opMode.isStopRequested()) {
+            robot.camera.start();
+            robot.camera.setPipeline(2);
+            opMode.telemetry.addData("current camera reading", robot.camera.status());
+            opMode.telemetry.update();
+        }
+
 
         opMode.waitForStart();
+
+        Pose2d startingPlace;
+
+        startingPlace = new Pose2d(61.1, -20.7 * isBlueValue, Math.toRadians(180));
 
         double[] location = new double[3];
         Motif[] motifWrapper = new Motif[1];
 
         Actions.runBlocking(
-                new ParallelAction(
-                        new SequentialAction(
-                                robot.getLocalizeWithApriltagAction(location),
-                                robot.getMotifFromObeliskAction(motifWrapper)
-                        ),
+                new SequentialAction(
+                        robot.getMotifFromObeliskAction(motifWrapper),
                         robot.getScanArtifactColorsAction()
                 )
         );
@@ -49,80 +59,95 @@ public class FarAutonomous {
         opMode.telemetry.addData("stored Artifacts", robot.getFeedingMechanismContents());
 
         robot.setMotif(motifWrapper[0]);
-
-        Pose2d startingPlace;
-
-        if (location[0] == location[1] && location[1] == location[2] && location[0] == 0.0) {
-            startingPlace = new Pose2d(61.1, -20.7 * isBlueValue, Math.toRadians(180));
-        }
-        else {
-            startingPlace = new Pose2d(location[0], location[1], location[2]);
-        }
-
-
         MecanumDrive drive = robot.drive;
         drive.localizer.setPose(startingPlace);
 
-        Action currentAction = null;
-
-        boolean actionRunResult = false;
-        int actionToProcess = 0;
-        int iterationCount = 0;
-        while (opMode.opModeIsActive()) {
-            robot.update();
-            iterationCount++;
-            if (!actionRunResult) {
-                if (actionToProcess == 0) {
-                    currentAction = new SequentialAction(
+        Actions.runBlocking(
+                new SequentialAction(
                             robot.getOrientRobotForShootAction(),
 
                             new RaceAction(
+                                    robot.drive.getHoldHeadingAction(robot),
                                     robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
                                     robot.getLaunchAllArtifactsAction()
                             ),
 
-                            robot.getStopShooterAction()
+                            robot.drive.getStopMovingAction(),
+                            robot.getStopShooterAction(),
+                            drive.actionBuilder(drive.localizer.getPose()).setTangent(drive.localizer.getPose().heading).splineTo(new Vector2d(36,-24 * isBlueValue), Math.PI).build()
+                )
+        );
 
-//                            robot.getStartIntakeAction(),
-//                            MoveToArtifact1,
-//                            robot.getStopIntakeAction(),
+//        if (location[0] == location[1] && location[1] == location[2] && location[0] == 0.0) {
+//        }
+//        else {
+//            startingPlace = new Pose2d(location[0], location[1], location[2]);
+//        }
+
+
+
+//        Action currentAction = null;
 //
-//                            MoveToShootingPlace
-                    );
-                    actionToProcess++;
-                }
-//                else if (actionToProcess == 1) {
+//        boolean actionRunResult = false;
+//        int actionToProcess = 0;
+//        int iterationCount = 0;
+        while (opMode.opModeIsActive()) {
+//            robot.update();
+//            iterationCount++;
+//            if (!actionRunResult) {
+//                if (actionToProcess == 0) {
 //                    currentAction = new SequentialAction(
 //                            robot.getOrientRobotForShootAction(),
-//                            robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
 //
 //                            new RaceAction(
+//                                    robot.drive.getHoldHeadingAction(robot),
 //                                    robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
 //                                    robot.getLaunchAllArtifactsAction()
-//                            )
+//                            ),
+//
+//                            robot.drive.getStopMovingAction(),
+//                            robot.getStopShooterAction()
+//
+////                            robot.getStartIntakeAction(),
+////                            MoveToArtifact1,
+////                            robot.getStopIntakeAction(),
+////
+////                            MoveToShootingPlace
 //                    );
 //                    actionToProcess++;
 //                }
-                else {
-                    currentAction = new ParallelAction(
-                            robot.getStopShooterAction(),
-                            drive.actionBuilder(drive.localizer.getPose()).splineTo(new Vector2d(36,-24 * isBlueValue), 0).build()
-                    );
-                }
-            }
-
-            if (opMode.getRuntime() >= 25.0) {
-                actionToProcess = 2;
-                actionRunResult = false;
-            }
-            else {
-                if (currentAction != null) {
-                    actionRunResult = currentAction.run(new TelemetryPacket());
-                }
-            }
-
-
-            opMode.telemetry.update();
+////                else if (actionToProcess == 1) {
+////                    currentAction = new SequentialAction(
+////                            robot.getOrientRobotForShootAction(),
+////                            robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
+////
+////                            new RaceAction(
+////                                    robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
+////                                    robot.getLaunchAllArtifactsAction()
+////                            )
+////                    );
+////                    actionToProcess++;
+////                }
+//                else {
+//                    currentAction = new ParallelAction(
+//                            robot.getStopShooterAction(),
+//                            drive.actionBuilder(drive.localizer.getPose()).setTangent(drive.localizer.getPose().heading).splineTo(new Vector2d(36,-24 * isBlueValue), Math.PI).build()
+//                    );
+//                }
+//            }
+//
+//            if (opMode.getRuntime() >= 25.0) {
+//                actionToProcess = 2;
+//                actionRunResult = false;
+//            }
+//            else {
+//                if (currentAction != null) {
+//                    actionRunResult = currentAction.run(new TelemetryPacket());
+//                }
+//            }
+//
+//
+//            opMode.telemetry.update();
         }
 
         robot.setEndPose(drive.localizer.getPose());

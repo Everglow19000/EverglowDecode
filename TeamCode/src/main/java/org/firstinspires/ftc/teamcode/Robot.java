@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -19,7 +20,7 @@ import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 
 public class Robot extends RobotBase {
     public static Vector2d goalPoseDistanceStatic = new Vector2d(-62, -60);
-    public static Vector2d goalPoseOrientationStatic = new Vector2d(-70, -65);
+    public static Vector2d goalPoseOrientationStatic = new Vector2d(-75, -55);
     public static Vector2d goalEdge1Static = new Vector2d(-52, -61);
     public static Vector2d goalEdge2Static = new Vector2d(-66, -51);
     private Vector2d goalPoseDistance;
@@ -32,13 +33,13 @@ public class Robot extends RobotBase {
     private static Pose2d lastActivationEndPose = null;
 
     Intake intake;
-    private Camera camera;
+    public Camera camera;
     public Shooter shooter;
     public FeedingMechanism feedingMechanism;
 
     public boolean usedLastPose = false;
     private int iterationCount = 0;
-    public Robot(HardwareMap hardwareMap, boolean isBlue, Motif motif) {
+    public Robot(HardwareMap hardwareMap, boolean isBlue, boolean isAuto, Motif motif) {
         goalEdge1 = new Vector2d(goalEdge1Static.x, goalEdge1Static.y*(isBlue ? 1 : -1));
         goalEdge2 = new Vector2d(goalEdge2Static.x, goalEdge2Static.y*(isBlue ? 1 : -1));
         goalPoseDistance = new Vector2d(goalPoseDistanceStatic.x, goalPoseDistanceStatic.y*(isBlue ? 1 : -1));
@@ -46,7 +47,7 @@ public class Robot extends RobotBase {
 
         subsystems = new Subsystem[4];
 
-        if (lastActivationEndPose == null) {
+        if (lastActivationEndPose == null || isAuto) {
             this.drive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
             usedLastPose = false;
         }
@@ -70,7 +71,7 @@ public class Robot extends RobotBase {
     }
 
     public Robot(HardwareMap hardwareMap, boolean isBlue) {
-        this(hardwareMap, isBlue, Motif.NONE);
+        this(hardwareMap, isBlue, true, Motif.NONE);
     }
     public void update() {
         iterationCount++;
@@ -80,10 +81,9 @@ public class Robot extends RobotBase {
         }
     }
     public Action getOrientRobotForShootAction() {
-        Vector2d diff = goalPoseOrientation.minus(drive.localizer.getPose().position);
         return drive.actionBuilder(drive.localizer.getPose())
 //                .turnTo(Utils.getOptimalAngleToShoot(goalEdge1, goalEdge2, drive.localizer.getPose().position))
-                .turnTo(Math.atan2(diff.y, diff.x))
+                .turnTo(Utils.getOptimalAngleToShoot(goalPoseOrientation, drive.localizer.getPose().position))
                 .build();
     }
 

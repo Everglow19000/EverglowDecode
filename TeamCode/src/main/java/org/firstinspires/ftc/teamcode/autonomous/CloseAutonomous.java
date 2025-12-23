@@ -12,10 +12,12 @@ import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
+import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.MecanumDrive;
 import org.firstinspires.ftc.teamcode.Robot;
+import org.firstinspires.ftc.teamcode.everglow_library.Utils;
 import org.firstinspires.ftc.teamcode.subsystems.FeedingMechanism;
 import org.firstinspires.ftc.teamcode.subsystems.Motif;
 
@@ -32,7 +34,14 @@ public class CloseAutonomous {
     public void run() throws InterruptedException {
         blackboard.put("isBlue", isBlue);
         int isBlueValue = isBlue ? 1 : -1;
-        Robot robot = new Robot(opMode.hardwareMap, isBlue);
+        Robot robot = new Robot(opMode.hardwareMap, isBlue, true, Motif.NONE);
+
+        while (opMode.opModeInInit() && !opMode.isStopRequested()) {
+            robot.camera.start();
+            robot.camera.setPipeline(1);
+            opMode.telemetry.addData("current camera reading", robot.camera.status());
+            opMode.telemetry.update();
+        }
 
         opMode.waitForStart();
 
@@ -54,6 +63,7 @@ public class CloseAutonomous {
         MecanumDrive drive = robot.drive;
 
         TrajectoryActionBuilder b_MoveToScanObelisk = drive.actionBuilder(startingPlace)
+                .setTangent(startingPlace.heading)
                 .splineToSplineHeading(new Pose2d(-36, -18 * isBlueValue, Math.toRadians(135 * isBlueValue)), (Math.PI/2.0) * isBlueValue);
 
         TrajectoryActionBuilder b_MoveToArtifact1 = b_MoveToScanObelisk.endTrajectory().fresh()
@@ -64,8 +74,8 @@ public class CloseAutonomous {
         TrajectoryActionBuilder b_MoveToShootingPlace = b_MoveToArtifact1.endTrajectory().fresh()
                 .splineTo(new Vector2d(-30, -28 * isBlueValue), Math.toRadians(225 * isBlueValue));
 
-        TrajectoryActionBuilder b_MoveToOutOfLine = b_MoveToShootingPlace.endTrajectory().fresh()
-                .strafeTo(new Vector2d(-60, -18 * isBlueValue));
+        TrajectoryActionBuilder b_MoveToOutOfLine = b_MoveToScanObelisk.endTrajectory().fresh()
+                .strafeTo(new Vector2d(-60, -12 * isBlueValue));
 
 
         Action MoveToScanObelisk = b_MoveToScanObelisk.build();
@@ -81,6 +91,8 @@ public class CloseAutonomous {
                         robot.getMotifFromObeliskAction(motifHolder)
                 )
         );
+
+        opMode.telemetry.addData("motif", motifHolder[0]);
 
         robot.setMotif(motifHolder[0]);
 
@@ -98,10 +110,12 @@ public class CloseAutonomous {
                             robot.getOrientRobotForShootAction(),
 
                             new RaceAction(
+                                    robot.drive.getHoldHeadingAction(robot),
                                     robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
                                     robot.getLaunchAllArtifactsAction()
                             ),
 
+                            robot.drive.getStopMovingAction(),
                             robot.getStopShooterAction()
 
 //                            robot.getStartIntakeAction(),
@@ -124,7 +138,7 @@ public class CloseAutonomous {
 //                    );
 //                    actionToProcess++;
 //                }
-                else {
+                else if (actionToProcess == 2) {
                     currentAction = new ParallelAction(
                             robot.getStopShooterAction(),
                             MoveToOutOfLine
@@ -145,7 +159,6 @@ public class CloseAutonomous {
             if (actionToProcess >= 1 && !actionRunResult && currentAction == null) {
                 robot.drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0), 0));
             }
-
 
             opMode.telemetry.update();
         }

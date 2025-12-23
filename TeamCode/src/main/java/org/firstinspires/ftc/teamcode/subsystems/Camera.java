@@ -81,7 +81,15 @@ public class Camera implements Subsystem{
             }
             LLResult result = limelight3A.getLatestResult();
             if (result.isValid()) {
-                locations[index] = result.getBotpose();
+                Pose3D currPose = null;
+
+                for (int i = 0; i < result.getFiducialResults().size(); i++) {
+                    currPose = result.getFiducialResults().get(i).getRobotPoseFieldSpace();
+                }
+
+                if (currPose != null) {
+                    locations[index] = currPose;
+                }
                 index++;
             }
 
@@ -107,6 +115,10 @@ public class Camera implements Subsystem{
         limelight3A.start();
     }
 
+    public void setPipeline(int pipeline) {
+        limelight3A.pipelineSwitch(pipeline);
+    }
+
     public DetermineMotifAction getDetermineMotifAction(Motif[] motifWrapper) {
         return new DetermineMotifAction(500.0, motifWrapper);
     }
@@ -122,6 +134,10 @@ public class Camera implements Subsystem{
 
     @Override
     public String status() {
-        return "";
+        LLResult currResult = limelight3A.getLatestResult();
+        if (currResult.isValid()) {
+            return "result valid";
+        }
+        return "result not valid";
     }
 }
