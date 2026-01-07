@@ -38,9 +38,12 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
+import com.seattlesolvers.solverslib.controller.PIDController;
+import com.seattlesolvers.solverslib.controller.PIDFController;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+import org.firstinspires.ftc.teamcode.everglow_library.Utils;
 import org.firstinspires.ftc.teamcode.messages.DriveCommandMessage;
 import org.firstinspires.ftc.teamcode.messages.MecanumCommandMessage;
 import org.firstinspires.ftc.teamcode.messages.MecanumLocalizerInputsMessage;
@@ -58,40 +61,42 @@ public final class MecanumDrive {
         // TODO: fill in these values based on
         //   see https://ftc-docs.firstinspires.org/en/latest/programming_resources/imu/imu.html?highlight=imu#physical-hub-mounting
         public RevHubOrientationOnRobot.LogoFacingDirection logoFacingDirection =
-                RevHubOrientationOnRobot.LogoFacingDirection.UP;
+                RevHubOrientationOnRobot.LogoFacingDirection.LEFT;
         public RevHubOrientationOnRobot.UsbFacingDirection usbFacingDirection =
-                RevHubOrientationOnRobot.UsbFacingDirection.FORWARD;
+                RevHubOrientationOnRobot.UsbFacingDirection.UP;
 
         // drive model parameters
         public double inPerTick = 1;
-        public double lateralInPerTick = inPerTick;
-        public double trackWidthTicks = 0;
+        public double lateralInPerTick = 0.7520767241220867;
+        public double trackWidthTicks = 15.019453018999597;
 
         // feedforward parameters (in tick units)
-        public double kS = 0;
-        public double kV = 0;
-        public double kA = 0;
+        public double kS = 0.05857883048303454;
+        public double kV = 0.1836316635149268;
+        public double kA = 0.01;
 
         // path profile parameters (in inches)
-        public double maxWheelVel = 50;
-        public double minProfileAccel = -30;
-        public double maxProfileAccel = 50;
+        public double maxWheelVel = 50/2.0;
+        public double minProfileAccel = -30/2.0;
+        public double maxProfileAccel = 50/2.0;
 
         // turn profile parameters (in radians)
-        public double maxAngVel = Math.PI; // shared with path
-        public double maxAngAccel = Math.PI;
+        public double maxAngVel = Math.PI/6.0; // shared with path
+        public double maxAngAccel = Math.PI/6.0;
 
         // path controller gains
-        public double axialGain = 0.0;
-        public double lateralGain = 0.0;
-        public double headingGain = 0.0; // shared with turn
+        public double axialGain = 2.0;
+        public double lateralGain = 4.0;
+        public double headingGain = 5.0; // shared with turn
 
-        public double axialVelGain = 0.0;
-        public double lateralVelGain = 0.0;
-        public double headingVelGain = 0.0; // shared with turn
+        public double axialVelGain = 3.75;
+        public double lateralVelGain = 0.5;
+        public double headingVelGain = 1.2; // shared with turn
     }
 
     public static Params PARAMS = new Params();
+    public static double holdHeadingP = 1.5;
+    public static double holdHeadingD = 0;
 
     public final MecanumKinematics kinematics = new MecanumKinematics(
             PARAMS.inPerTick * PARAMS.trackWidthTicks, PARAMS.inPerTick / PARAMS.lateralInPerTick);
@@ -238,6 +243,9 @@ public final class MecanumDrive {
         // TODO: reverse motor directions if needed
         //   leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
 
+        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
+
         // TODO: make sure your config has an IMU with this name (can be BNO or BHI)
         //   see https://ftc-docs.firstinspires.org/en/latest/hardware_and_software_configuration/configuring/index.html
         lazyImu = new LazyHardwareMapImu(hardwareMap, "imu", new RevHubOrientationOnRobot(
@@ -245,7 +253,7 @@ public final class MecanumDrive {
 
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
 
-        localizer = new DriveLocalizer(pose);
+        localizer = new OTOSLocalizer(hardwareMap, pose);
 
         FlightRecorder.write("MECANUM_PARAMS", PARAMS);
     }
@@ -446,6 +454,50 @@ public final class MecanumDrive {
             c.setStroke("#7C4DFF7A");
             c.fillCircle(turn.beginPose.position.x, turn.beginPose.position.y, 2);
         }
+    }
+
+    public final class HoldHeadingAction implements Action {
+        Robot robot;
+        PIDController controller;
+        private HoldHeadingAction(Robot robot) {
+            this.robot = robot;
+            controller = new PIDController(holdHeadingP, 0, holdHeadingD);
+        }
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            updatePoseEstimate();
+            setDrivePowers(
+                    new PoseVelocity2d(
+                            new Vector2d(0,0),
+                            controller.calculate(localizer.getPose().heading.toDouble(), Utils.getOptimalAngleToShoot(robot.goalPoseOrientation, localizer.getPose().position))
+                    )
+            );
+            return true;
+        }
+    }
+
+    public final class StopMovingAction implements Action {
+        private StopMovingAction() {
+        }
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            setDrivePowers(
+                    new PoseVelocity2d(
+                            new Vector2d(0,0),
+                            0
+                    )
+            );
+            return false;
+        }
+    }
+
+    public HoldHeadingAction getHoldHeadingAction(Robot robot) {
+        return new HoldHeadingAction(robot);
+    }
+
+    public StopMovingAction getStopMovingAction() {
+        return new StopMovingAction();
     }
 
     public PoseVelocity2d updatePoseEstimate() {

@@ -21,9 +21,8 @@ import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.everglow_library.Utils;
 import org.firstinspires.ftc.teamcode.subsystems.Motif;
 
-@TeleOp(name="DriverOpMode", group="Driving")
-@Config
-public class DriverOpMode extends LinearOpMode {
+@TeleOp(name="TrainingOpMode", group="Driving")
+public class TrainingOpMode extends LinearOpMode {
     public static double holdHeadingP = MecanumDrive.holdHeadingP;
     public static double holdHeadingD = MecanumDrive.holdHeadingD;
     Robot robot;
@@ -103,14 +102,9 @@ public class DriverOpMode extends LinearOpMode {
                 driveAvailable = false;
                 shooterAvailable = false;
                 spindexerAvailable = false;
+                robot.shooter.setFlywheelMotorSpeed(1200);
                 currentAction = new SequentialAction(
-                        robot.getOrientRobotForShootAction(),
-                        new RaceAction(
-                                robot.drive.getHoldHeadingAction(robot),
-                                robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
-                                robot.getLaunchAllArtifactsAction()
-                        ),
-                        robot.drive.getStopMovingAction(),
+                        robot.getLaunchAllArtifactsAction(),
                         robot.getStopShooterAction()
                 );
             }
@@ -164,3 +158,5 @@ public class DriverOpMode extends LinearOpMode {
         }
     }
 }
+
+
