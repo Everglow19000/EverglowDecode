@@ -80,9 +80,10 @@ public class Camera implements Subsystem{
 
                 limelight3A.pipelineSwitch(1);
             }
+            limelight3A.updateRobotOrientation();
             LLResult result = limelight3A.getLatestResult();
             if (result.isValid()) {
-                locations[index] = result.getBotpose();
+                locations[index] = result.getBotpose_MT2();
                 index++;
             }
 
