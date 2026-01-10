@@ -43,6 +43,22 @@ public abstract class RobotBase {
         ));
         drive.updatePoseEstimate();
     }
+    public void calculateDrivePowers(Gamepad gamepad, boolean isFieldCentric) {
+        Vector2d translationVector = new Vector2d(
+                squareKeepingSymbol(-gamepad.left_stick_y)*(1.0/Math.pow(4.5, gamepad.right_trigger)),
+                squareKeepingSymbol(-gamepad.left_stick_x)*(1.0/Math.pow(4, gamepad.right_trigger))
+        );
+
+        if (isFieldCentric) {
+            translationVector = Utils.rotateByAngle(translationVector, drive.localizer.getPose().heading.inverse().toDouble());
+        }
+
+        drive.setDrivePowers(new PoseVelocity2d(
+                translationVector,
+                squareKeepingSymbol(-gamepad.right_stick_x)*(1.0/Math.pow(5, gamepad.right_trigger))
+        ));
+        drive.updatePoseEstimate();
+    }
 
     // moves the robot according to the gamepad input
     public void calculateDrivePowers(GamepadEx gamepad) {
@@ -51,6 +67,23 @@ public abstract class RobotBase {
                         squareKeepingSymbol(gamepad.getLeftY())*(1.0/Math.pow(4.5, gamepad.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER))),
                         squareKeepingSymbol(-gamepad.getLeftX())*(1.0/Math.pow(4, gamepad.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER)))
                 ),
+                squareKeepingSymbol(-gamepad.getRightX())*(1.0/Math.pow(5, gamepad.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER)))
+        ));
+        drive.updatePoseEstimate();
+    }
+
+    public void calculateDrivePowers(GamepadEx gamepad, boolean isFieldCentric) {
+        Vector2d translationVector = new Vector2d(
+                squareKeepingSymbol(gamepad.getLeftY())*(1.0/Math.pow(4.5, gamepad.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER))),
+                squareKeepingSymbol(-gamepad.getLeftX())*(1.0/Math.pow(4, gamepad.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER)))
+        );
+
+        if (isFieldCentric) {
+            translationVector = Utils.rotateByAngle(translationVector, drive.localizer.getPose().heading.inverse().toDouble());
+        }
+
+        drive.setDrivePowers(new PoseVelocity2d(
+                translationVector,
                 squareKeepingSymbol(-gamepad.getRightX())*(1.0/Math.pow(5, gamepad.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER)))
         ));
         drive.updatePoseEstimate();
