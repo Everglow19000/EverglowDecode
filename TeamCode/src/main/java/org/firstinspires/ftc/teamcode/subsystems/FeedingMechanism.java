@@ -45,8 +45,8 @@ public class FeedingMechanism implements Subsystem {
 
     public enum SpindexerPosition {
         SHOOT_INDEX_0(0.75),
-        SHOOT_INDEX_1(0.37),
-        SHOOT_INDEX_2(0),
+        SHOOT_INDEX_1(0),
+        SHOOT_INDEX_2(0.37),
         INTAKE_INDEX_0(0.19),
         INTAKE_INDEX_1(0.56),
         INTAKE_INDEX_2(0.92);
@@ -429,7 +429,7 @@ public class FeedingMechanism implements Subsystem {
     private int getArtifactColorCount(ArtifactColor color) {
         int sum = 0;
         for (int i = 0; i < storedArtifacts.length; i++) {
-            if (storedArtifacts[i] == color || (storedArtifacts[i] != null && color == ArtifactColor.PURPLE)) {
+            if (storedArtifacts[i] == color || (storedArtifacts[i] == ArtifactColor.NONE && color == ArtifactColor.PURPLE)) {
                 sum++;
             }
         }
@@ -440,7 +440,7 @@ public class FeedingMechanism implements Subsystem {
         int[] positions = new int[getArtifactColorCount(color)];
         int positionsIndex = 0;
         for (int i = 0; i < storedArtifacts.length; i++) {
-            if (storedArtifacts[i] == color || (storedArtifacts[i] != null && color == ArtifactColor.PURPLE)) {
+            if (storedArtifacts[i] == color || (storedArtifacts[i] == ArtifactColor.NONE && color == ArtifactColor.PURPLE)) {
                 positions[positionsIndex] = i;
                 positionsIndex++;
             }
@@ -610,7 +610,7 @@ public class FeedingMechanism implements Subsystem {
     public static int countArtifactsInSpindexer(ArtifactColor[] storedArtifacts) {
         int sum = 0;
         for (int i = 0; i < storedArtifacts.length; i++) {
-            if (storedArtifacts[i] != ArtifactColor.NONE) {
+            if (storedArtifacts[i] != null) {
                 sum++;
             }
         }
@@ -621,7 +621,7 @@ public class FeedingMechanism implements Subsystem {
     public static int getArtifactColorCount(ArtifactColor[] storedArtifacts, ArtifactColor color) {
         int sum = 0;
         for (int i = 0; i < storedArtifacts.length; i++) {
-            if (storedArtifacts[i] == color) {
+            if (storedArtifacts[i] == color || (storedArtifacts[i] == ArtifactColor.NONE && color == ArtifactColor.PURPLE)) {
                 sum++;
             }
         }
@@ -633,7 +633,7 @@ public class FeedingMechanism implements Subsystem {
         int[] positions = new int[getArtifactColorCount(storedArtifacts, color)];
         int positionsIndex = 0;
         for (int i = 0; i < storedArtifacts.length; i++) {
-            if (storedArtifacts[i] == color) {
+            if (storedArtifacts[i] == color || (storedArtifacts[i] == ArtifactColor.NONE && color == ArtifactColor.PURPLE)) {
                 positions[positionsIndex] = i;
                 positionsIndex++;
             }
