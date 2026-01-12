@@ -160,6 +160,7 @@ public class DriverOpMode extends LinearOpMode {
             telemetry.addData("feeding mechanism intaking", robot.feedingMechanism.isIntaking());
             telemetry.addData("contents", robot.getFeedingMechanismContents());
             telemetry.addData("position", robot.drive.localizer.getPose().position);
+            telemetry.addData("heading", robot.drive.localizer.getPose().heading.toDouble());
             telemetry.update();
         }
     }
