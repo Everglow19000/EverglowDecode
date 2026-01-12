@@ -8,8 +8,10 @@ import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.Drawing;
 import org.firstinspires.ftc.teamcode.MecanumDrive;
+import org.firstinspires.ftc.teamcode.OTOSLocalizer;
 import org.firstinspires.ftc.teamcode.TankDrive;
 
 public class LocalizationTest extends LinearOpMode {
@@ -19,7 +21,7 @@ public class LocalizationTest extends LinearOpMode {
 
         if (TuningOpModes.DRIVE_CLASS.equals(MecanumDrive.class)) {
             MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
-
+            OTOSLocalizer otos = new OTOSLocalizer(hardwareMap, new Pose2d(0, 0, 0));
             waitForStart();
 
             while (opModeIsActive()) {
@@ -32,11 +34,14 @@ public class LocalizationTest extends LinearOpMode {
                 ));
 
                 drive.updatePoseEstimate();
+                otos.update();
 
                 Pose2d pose = drive.localizer.getPose();
                 telemetry.addData("x", pose.position.x);
                 telemetry.addData("y", pose.position.y);
-                telemetry.addData("heading (deg)", Math.toDegrees(pose.heading.toDouble()));
+                telemetry.addData("default heading", pose.heading.toDouble());
+                telemetry.addData("otos heading", otos.getPose().heading.toDouble());
+                telemetry.addData("imu heading", drive.lazyImu.get().getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS));
                 telemetry.update();
 
                 TelemetryPacket packet = new TelemetryPacket();

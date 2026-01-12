@@ -67,8 +67,8 @@ public final class MecanumDrive {
 
         // drive model parameters
         public double inPerTick = 0.002965108;
-        public double lateralInPerTick = 0.00212028348857457;
-        public double trackWidthTicks = 4624.190325539588;
+        public double lateralInPerTick = 0.002965108;
+        public double trackWidthTicks = 4661.175484209323;
 
         // feedforward parameters (in tick units)
         public double kS = 0.9;
@@ -118,6 +118,7 @@ public final class MecanumDrive {
     public final LazyImu lazyImu;
 
     public final Localizer localizer;
+    public final OTOSLocalizer otosLocalizer;
     private final LinkedList<Pose2d> poseHistory = new LinkedList<>();
 
     private final DownsampledWriter estimatedPoseWriter = new DownsampledWriter("ESTIMATED_POSE", 50_000_000);
@@ -254,6 +255,7 @@ public final class MecanumDrive {
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
 
         localizer = new ThreeDeadWheelLocalizer(hardwareMap, PARAMS.inPerTick, pose);
+        otosLocalizer = new OTOSLocalizer(hardwareMap, pose);
 
         FlightRecorder.write("MECANUM_PARAMS", PARAMS);
     }
@@ -271,6 +273,10 @@ public final class MecanumDrive {
         leftBack.setPower(wheelVels.leftBack.get(0) / maxPowerMag);
         rightBack.setPower(wheelVels.rightBack.get(0) / maxPowerMag);
         rightFront.setPower(wheelVels.rightFront.get(0) / maxPowerMag);
+    }
+    
+    public Pose2d getRobotPose() {
+        return new Pose2d(localizer.getPose().position, otosLocalizer.getPose().heading);
     }
 
     public final class FollowTrajectoryAction implements Action {
@@ -322,7 +328,7 @@ public final class MecanumDrive {
                     PARAMS.axialGain, PARAMS.lateralGain, PARAMS.headingGain,
                     PARAMS.axialVelGain, PARAMS.lateralVelGain, PARAMS.headingVelGain
             )
-                    .compute(txWorldTarget, localizer.getPose(), robotVelRobot);
+                    .compute(txWorldTarget, getRobotPose(), robotVelRobot);
             driveCommandWriter.write(new DriveCommandMessage(command));
 
             MecanumKinematics.WheelVelocities<Time> wheelVels = kinematics.inverse(command);
@@ -343,11 +349,11 @@ public final class MecanumDrive {
             rightBack.setPower(rightBackPower);
             rightFront.setPower(rightFrontPower);
 
-            p.put("x", localizer.getPose().position.x);
-            p.put("y", localizer.getPose().position.y);
-            p.put("heading (deg)", Math.toDegrees(localizer.getPose().heading.toDouble()));
+            p.put("x", getRobotPose().position.x);
+            p.put("y", getRobotPose().position.y);
+            p.put("heading (deg)", Math.toDegrees(getRobotPose().heading.toDouble()));
 
-            Pose2d error = txWorldTarget.value().minusExp(localizer.getPose());
+            Pose2d error = txWorldTarget.value().minusExp(getRobotPose());
             p.put("xError", error.position.x);
             p.put("yError", error.position.y);
             p.put("headingError (deg)", Math.toDegrees(error.heading.toDouble()));
@@ -360,7 +366,7 @@ public final class MecanumDrive {
             Drawing.drawRobot(c, txWorldTarget.value());
 
             c.setStroke("#3F51B5");
-            Drawing.drawRobot(c, localizer.getPose());
+            Drawing.drawRobot(c, getRobotPose());
 
             c.setStroke("#4CAF50FF");
             c.setStrokeWidth(1);
@@ -414,7 +420,7 @@ public final class MecanumDrive {
                     PARAMS.axialGain, PARAMS.lateralGain, PARAMS.headingGain,
                     PARAMS.axialVelGain, PARAMS.lateralVelGain, PARAMS.headingVelGain
             )
-                    .compute(txWorldTarget, localizer.getPose(), robotVelRobot);
+                    .compute(txWorldTarget, getRobotPose(), robotVelRobot);
             driveCommandWriter.write(new DriveCommandMessage(command));
 
             MecanumKinematics.WheelVelocities<Time> wheelVels = kinematics.inverse(command);
@@ -441,7 +447,7 @@ public final class MecanumDrive {
             Drawing.drawRobot(c, txWorldTarget.value());
 
             c.setStroke("#3F51B5");
-            Drawing.drawRobot(c, localizer.getPose());
+            Drawing.drawRobot(c, getRobotPose());
 
             c.setStroke("#7C4DFFFF");
             c.fillCircle(turn.beginPose.position.x, turn.beginPose.position.y, 2);
@@ -469,7 +475,7 @@ public final class MecanumDrive {
             setDrivePowers(
                     new PoseVelocity2d(
                             new Vector2d(0,0),
-                            controller.calculate(localizer.getPose().heading.toDouble(), Utils.getOptimalAngleToShoot(robot.goalPoseOrientation, localizer.getPose().position))
+                            controller.calculate(getRobotPose().heading.toDouble(), Utils.getOptimalAngleToShoot(robot.goalPoseOrientation, getRobotPose().position))
                     )
             );
             return true;
@@ -501,14 +507,17 @@ public final class MecanumDrive {
     }
 
     public PoseVelocity2d updatePoseEstimate() {
-        PoseVelocity2d vel = localizer.update();
-        poseHistory.add(localizer.getPose());
+        PoseVelocity2d velLocalizer = localizer.update();
+        PoseVelocity2d velOTOS = otosLocalizer.update();
+        PoseVelocity2d vel = new PoseVelocity2d(velLocalizer.linearVel, velOTOS.angVel);
+        
+        poseHistory.add(getRobotPose());
         
         while (poseHistory.size() > 100) {
             poseHistory.removeFirst();
         }
 
-        estimatedPoseWriter.write(new PoseMessage(localizer.getPose()));
+        estimatedPoseWriter.write(new PoseMessage(getRobotPose()));
         
         
         return vel;
