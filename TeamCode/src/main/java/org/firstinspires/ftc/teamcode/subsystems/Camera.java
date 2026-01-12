@@ -17,7 +17,11 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.teamcode.Localizer;
 import org.firstinspires.ftc.teamcode.everglow_library.Subsystem;
+
+import java.util.List;
 
 public class Camera implements Subsystem{
     public class DetermineMotifAction implements Action {
@@ -80,7 +84,7 @@ public class Camera implements Subsystem{
 
                 limelight3A.pipelineSwitch(1);
             }
-            limelight3A.updateRobotOrientation();
+            limelight3A.updateRobotOrientation(localizer.getPose().heading.toDouble());
             LLResult result = limelight3A.getLatestResult();
             if (result.isValid()) {
                 locations[index] = result.getBotpose_MT2();
@@ -92,7 +96,7 @@ public class Camera implements Subsystem{
                     location[0] += pose3D.getPosition().toUnit(DistanceUnit.INCH).x / locations.length;
                     location[1] += pose3D.getPosition().toUnit(DistanceUnit.INCH).y / locations.length;
                 }
-                location[2] += locations[locations.length-1].getOrientation().getYaw(AngleUnit.RADIANS);
+                location[2] += localizer.getPose().heading.toDouble();
                 return false;
             }
             return true;
@@ -100,9 +104,11 @@ public class Camera implements Subsystem{
     }
 
     private Limelight3A limelight3A;
+    private Localizer localizer;
 
-    public Camera(HardwareMap hardwareMap) {
+    public Camera(HardwareMap hardwareMap, Localizer localizer) {
         limelight3A = hardwareMap.get(Limelight3A.class, "limelight");
+        this.localizer = localizer;
     }
 
     public void start() {
@@ -111,6 +117,30 @@ public class Camera implements Subsystem{
 
     public void setPipeline(int pipeline) {
         limelight3A.pipelineSwitch(pipeline);
+    }
+    // returns -1 if result is invalid
+    public double getDistanceFromAprilTag(boolean isBlue) {
+        limelight3A.pipelineSwitch(1);
+        LLResult result = limelight3A.getLatestResult();
+        if (result.isValid()) {
+            int wantedTagID = isBlue ? 20 : 24;
+
+            List<LLResultTypes.FiducialResult> fiducialResults = result.getFiducialResults();
+            Pose3D pose = null;
+
+            for (int i = 0; i < fiducialResults.size(); i++) {
+                if (fiducialResults.get(i).getFiducialId() == wantedTagID) {
+                    pose = fiducialResults.get(i).getRobotPoseTargetSpace();
+                }
+            }
+
+            if (pose == null) {
+                return -1;
+            }
+
+            return Math.sqrt(Math.pow(pose.getPosition().toUnit(DistanceUnit.INCH).x, 2) + Math.pow(pose.getPosition().toUnit(DistanceUnit.INCH).y, 2));
+        }
+        return -1;
     }
 
     public DetermineMotifAction getDetermineMotifAction(Motif[] motifWrapper) {
