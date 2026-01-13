@@ -3,6 +3,8 @@ package org.firstinspires.ftc.teamcode.subsystems;
 import static org.opencv.core.Core.magnitude;
 import static org.opencv.core.Core.mean;
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
@@ -138,7 +140,12 @@ public class Camera implements Subsystem{
                 return -1;
             }
 
-            return Math.sqrt(Math.pow(pose.getPosition().toUnit(DistanceUnit.INCH).x, 2) + Math.pow(pose.getPosition().toUnit(DistanceUnit.INCH).y, 2));
+            return Math.sqrt(
+                    0
+                    + Math.pow(pose.getPosition().toUnit(DistanceUnit.INCH).x, 2)
+//                            + Math.pow(pose.getPosition().toUnit(DistanceUnit.INCH).y, 2)
+                            + Math.pow(pose.getPosition().toUnit(DistanceUnit.INCH).z, 2)
+            );
         }
         return -1;
     }
@@ -153,7 +160,15 @@ public class Camera implements Subsystem{
 
     @Override
     public void update(int iterationCount) {
+        limelight3A.pipelineSwitch(1);
+        limelight3A.updateRobotOrientation(localizer.getPose().heading.toDouble());
+        LLResult result = limelight3A.getLatestResult();
+        if (result.isValid()) {
+            double x = result.getBotpose().getPosition().toUnit(DistanceUnit.INCH).x;
+            double y = result.getBotpose().getPosition().toUnit(DistanceUnit.INCH).y;
 
+            localizer.setPose(new Pose2d(x, y, localizer.getPose().heading.toDouble()));
+        }
     }
 
     @Override

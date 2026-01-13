@@ -17,6 +17,7 @@ public abstract class RobotBase {
     public int iterationCount;
     // calls the update function on all subsystems
     public void updateSubsystems() {
+        drive.updatePoseEstimate();
         for (int i = 0; i < subsystems.length; i++) {
             subsystems[i].update(iterationCount);
         }

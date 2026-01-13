@@ -2,40 +2,41 @@ package org.firstinspires.ftc.teamcode.tuning;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.subsystems.Camera;
 import org.firstinspires.ftc.teamcode.subsystems.Motif;
 
 import java.util.Arrays;
 
 @TeleOp(name="CameraTest", group="Tests")
-@Disabled
 public class CameraTest extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-        Camera camera = new Camera(hardwareMap, null);
+        Robot robot = new Robot(hardwareMap, true);
+        robot.drive.localizer.setPose(new Pose2d(0, 0, (-3*Math.PI)/4.0));
 
-        camera.start();
+        double[] location = new double[3];
 
         waitForStart();
 
-        double[] location = new double[3];
-        Motif[] motifWrapper = new Motif[1];
+//        Actions.runBlocking(robot.getLocalizeWithApriltagAction(location));
+
+//        robot.drive.localizer.setPose(new Pose2d(location[0], location[1], location[2]));
 
         while (opModeIsActive()) {
-            if (gamepad1.circle){
-                Actions.runBlocking(camera.getFindLocationAction(location , 250));
-            }
-            if (gamepad1.square) {
-                Actions.runBlocking(camera.getDetermineMotifAction(motifWrapper));
-            }
-            telemetry.addData("motif", motifWrapper[0]);
-            telemetry.addData("location", Arrays.toString(location));
+            robot.calculateDrivePowers(gamepad1);
+            robot.update();
+
+            telemetry.addData("distance", robot.calculateDistanceFromGoal());
+            telemetry.addData("location", robot.drive.localizer.getPose().position);
+            telemetry.addData("heading", robot.drive.localizer.getPose().heading.toDouble());
             telemetry.update();
         }
     }
