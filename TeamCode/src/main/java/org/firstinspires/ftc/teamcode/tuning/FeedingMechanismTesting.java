@@ -3,18 +3,13 @@ package org.firstinspires.ftc.teamcode.tuning;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
-import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.AnalogInput;
-import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.ServoImplEx;
 
 import org.firstinspires.ftc.teamcode.subsystems.FeedingMechanism;
 import org.firstinspires.ftc.teamcode.subsystems.Motif;
-
-import java.util.Arrays;
 
 @TeleOp(name="Feeding Mechanism Testing", group="Tests")
 @Config
@@ -41,7 +36,7 @@ public class FeedingMechanismTesting extends LinearOpMode {
         boolean flagSquare = false;
         boolean flagTriangle = false;
 
-        telemetry.addLine("starting action");
+        telemetry.addLine("scanning action started");
         telemetry.update();
 
         Actions.runBlocking(feedingMechanism.getScanArtifactColorsAction());
@@ -58,7 +53,7 @@ public class FeedingMechanismTesting extends LinearOpMode {
             }
             else {
                 if (gamepad1.cross && !flagCross) {
-                    feedingMechanism.setSpindexerPosition(feedingMechanism.getCurrentSpindexerPosition() == FeedingMechanism.SpindexerPosition.INTAKE_INDEX_2 ? FeedingMechanism.SpindexerPosition.SHOOT_INDEX_0 : feedingMechanism.getCurrentSpindexerPosition() == FeedingMechanism.SpindexerPosition.SHOOT_INDEX_2 ? FeedingMechanism.SpindexerPosition.INTAKE_INDEX_0 : feedingMechanism.getCurrentSpindexerPosition().getNext());
+                    feedingMechanism.setSpindexerPosition(feedingMechanism.getTargetSpindexerPosition() == FeedingMechanism.SpindexerPosition.INTAKE_INDEX_2 ? FeedingMechanism.SpindexerPosition.SHOOT_INDEX_0 : feedingMechanism.getTargetSpindexerPosition() == FeedingMechanism.SpindexerPosition.SHOOT_INDEX_2 ? FeedingMechanism.SpindexerPosition.INTAKE_INDEX_0 : feedingMechanism.getTargetSpindexerPosition().getNext());
                 }
                 flagCross = gamepad1.cross;
                 if (gamepad1.square && !flagSquare) {
@@ -67,10 +62,11 @@ public class FeedingMechanismTesting extends LinearOpMode {
                 flagSquare = gamepad1.square;
             }
 
+            telemetry.addData("is in position", feedingMechanism.isSpindexerInPosition());
             telemetry.addData("limit switch sensing", !feedingMechanism.limitSwitch.getState());
             telemetry.addData("analog spindexer pos", spindexerInput.getVoltage()/spindexerInput.getMaxVoltage());
-            telemetry.addData("curr spindexer pos", feedingMechanism.getCurrentSpindexerPosition().name());
-            telemetry.addData("spindexer pos value", feedingMechanism.getCurrentSpindexerPosition().position);
+            telemetry.addData("curr spindexer pos", feedingMechanism.getTargetSpindexerPosition().name());
+            telemetry.addData("spindexer pos value", feedingMechanism.getTargetSpindexerPosition().position);
             telemetry.addData("contents", feedingMechanism.getStoredArtifacts());
             telemetry.update();
         }
