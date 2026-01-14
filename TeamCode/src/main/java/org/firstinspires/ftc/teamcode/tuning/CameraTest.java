@@ -34,6 +34,8 @@ public class CameraTest extends LinearOpMode {
             robot.calculateDrivePowers(gamepad1);
             robot.update();
 
+            telemetry.addData("pos", robot.camera.limelight3A.getLatestResult().getBotpose_MT2().toString());
+
             telemetry.addData("distance", robot.calculateDistanceFromGoal());
             telemetry.addData("location", robot.drive.localizer.getPose().position);
             telemetry.addData("heading", robot.drive.localizer.getPose().heading.toDouble());

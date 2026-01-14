@@ -86,7 +86,7 @@ public class Camera implements Subsystem{
 
                 limelight3A.pipelineSwitch(1);
             }
-            limelight3A.updateRobotOrientation(localizer.getPose().heading.toDouble());
+            limelight3A.updateRobotOrientation(Math.toDegrees(localizer.getPose().heading.toDouble()));
             LLResult result = limelight3A.getLatestResult();
             if (result.isValid()) {
                 locations[index] = result.getBotpose_MT2();
@@ -105,7 +105,7 @@ public class Camera implements Subsystem{
         }
     }
 
-    private Limelight3A limelight3A;
+    public Limelight3A limelight3A;
     private Localizer localizer;
 
     public Camera(HardwareMap hardwareMap, Localizer localizer) {
@@ -122,30 +122,34 @@ public class Camera implements Subsystem{
     }
     // returns -1 if result is invalid
     public double getDistanceFromAprilTag(boolean isBlue) {
-        limelight3A.pipelineSwitch(1);
         LLResult result = limelight3A.getLatestResult();
         if (result.isValid()) {
-            int wantedTagID = isBlue ? 20 : 24;
+            if (result.getPipelineIndex() != 1) {
+                limelight3A.pipelineSwitch(1);
+            }
+            else {
+                int wantedTagID = isBlue ? 20 : 24;
 
-            List<LLResultTypes.FiducialResult> fiducialResults = result.getFiducialResults();
-            Pose3D pose = null;
+                List<LLResultTypes.FiducialResult> fiducialResults = result.getFiducialResults();
+                Pose3D pose = null;
 
-            for (int i = 0; i < fiducialResults.size(); i++) {
-                if (fiducialResults.get(i).getFiducialId() == wantedTagID) {
-                    pose = fiducialResults.get(i).getRobotPoseTargetSpace();
+                for (int i = 0; i < fiducialResults.size(); i++) {
+                    if (fiducialResults.get(i).getFiducialId() == wantedTagID) {
+                        pose = fiducialResults.get(i).getRobotPoseTargetSpace();
+                    }
                 }
-            }
 
-            if (pose == null) {
-                return -1;
-            }
+                if (pose == null) {
+                    return -1;
+                }
 
-            return Math.sqrt(
-                    0
-                    + Math.pow(pose.getPosition().toUnit(DistanceUnit.INCH).x, 2)
+                return Math.sqrt(
+                        0
+//                                + Math.pow(pose.getPosition().toUnit(DistanceUnit.INCH).x, 2)
 //                            + Math.pow(pose.getPosition().toUnit(DistanceUnit.INCH).y, 2)
-                            + Math.pow(pose.getPosition().toUnit(DistanceUnit.INCH).z, 2)
-            );
+                                + Math.pow(pose.getPosition().toUnit(DistanceUnit.INCH).z, 2)
+                );
+            }
         }
         return -1;
     }
@@ -160,14 +164,18 @@ public class Camera implements Subsystem{
 
     @Override
     public void update(int iterationCount) {
-        limelight3A.pipelineSwitch(1);
-        limelight3A.updateRobotOrientation(localizer.getPose().heading.toDouble());
+        limelight3A.updateRobotOrientation(Math.toDegrees(localizer.getPose().heading.toDouble()));
         LLResult result = limelight3A.getLatestResult();
         if (result.isValid()) {
-            double x = result.getBotpose().getPosition().toUnit(DistanceUnit.INCH).x;
-            double y = result.getBotpose().getPosition().toUnit(DistanceUnit.INCH).y;
+            if (result.getPipelineIndex() != 1) {
+                limelight3A.pipelineSwitch(1);
+            }
+            else {
+                double x = result.getBotpose_MT2().getPosition().toUnit(DistanceUnit.INCH).x;
+                double y = result.getBotpose_MT2().getPosition().toUnit(DistanceUnit.INCH).y;
 
-            localizer.setPose(new Pose2d(x, y, localizer.getPose().heading.toDouble()));
+                localizer.setPose(new Pose2d(x, y, localizer.getPose().heading.toDouble()));
+            }
         }
     }
 
