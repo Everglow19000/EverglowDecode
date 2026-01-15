@@ -5,8 +5,8 @@ Welcome to our comprehensive FTC GitHub template, designed to streamline your ro
 Road Runner
 A powerful motion planning library tailored for FTC, enabling precise 2D path following and trajectory generation. It allows your robot to navigate complex paths with control over velocity and acceleration.
 
-## FTCLib
-An all-encompassing library that simplifies FTC programming by providing modules for sensors, motors, servos, and utility functions, enhancing both rookie and veteran teams' coding efficiency. ​
+## Solverslib
+An all-encompassing library based on FTCLib that simplifies FTC programming by providing modules for sensors, motors, servos, and utility functions, enhancing both rookie and veteran teams' coding efficiency. ​
 
 ## MeepMeep
 A trajectory visualizer for Road Runner, allowing you to simulate and visualize your robot's paths before deployment, ensuring smooth and accurate autonomous routines. ​
