@@ -58,6 +58,12 @@ public class DriverOpMode extends LinearOpMode {
             .addStep(0.25, 0.25, 250)
             .addStep(0.5, 0.5, 250)
             .build();
+    Gamepad.RumbleEffect endCameraActionRumble = new Gamepad.RumbleEffect.Builder()
+            .addStep(1, 0, 250)
+            .addStep(0, 1, 250)
+            .build();
+
+    Gamepad.RumbleEffect currentRumble;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -99,10 +105,11 @@ public class DriverOpMode extends LinearOpMode {
                 gamepad.gamepad.runRumbleEffect(endSpindexerActionRumble);
             }
 
-            if (gamepad.wasJustPressed(GamepadKeys.Button.CROSS)) {
+            if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.CROSS)) {
                 driveAvailable = false;
                 shooterAvailable = false;
                 spindexerAvailable = false;
+                currentRumble = endShootActionRumble;
                 currentAction = new SequentialAction(
                         robot.getOrientRobotForShootAction(),
                         new RaceAction(
@@ -114,19 +121,23 @@ public class DriverOpMode extends LinearOpMode {
                         robot.getStopShooterAction()
                 );
             }
-            else if (gamepad.wasJustPressed(GamepadKeys.Button.SQUARE)) {
+            else if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.SQUARE)) {
                 driveAvailable = false;
-                currentAction = robot.getMotifFromObeliskAction(motifs);
+                currentRumble = endCameraActionRumble;
+                currentAction = new SequentialAction(
+                        robot.getLocalizeWithApriltagAction(position),
+                        new UpdateRobotPoseAction(robot, position)
+                );
             }
-            else if (gamepad.wasJustPressed(GamepadKeys.Button.TRIANGLE)) {
+            else if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.TRIANGLE)) {
                 spindexerAvailable = false;
                 currentAction = robot.getScanArtifactColorsAction();
             }
 
-            if (spindexerAvailable && gamepad.wasJustPressed(GamepadKeys.Button.RIGHT_BUMPER)) {
+            if (currentAction == null && spindexerAvailable && gamepad.wasJustPressed(GamepadKeys.Button.RIGHT_BUMPER)) {
                 robot.startIntake();
             }
-            else if (!spindexerAvailable || gamepad.wasJustPressed(GamepadKeys.Button.LEFT_BUMPER)) {
+            else if (currentAction == null && !spindexerAvailable || gamepad.wasJustPressed(GamepadKeys.Button.LEFT_BUMPER)) {
                 robot.stopIntake();
             }
 
@@ -143,10 +154,13 @@ public class DriverOpMode extends LinearOpMode {
                 driveAvailable = true;
                 shooterAvailable = true;
                 spindexerAvailable = true;
+                gamepad.gamepad.runRumbleEffect(endGenericActionRumble);
+                currentRumble = null;
                 robot.stopShooterMotor();
             }
             if (currentAction != null && !currentAction.run(new TelemetryPacket())) {
-                gamepad.gamepad.runRumbleEffect(endGenericActionRumble);
+                gamepad.gamepad.runRumbleEffect(currentRumble == null ? endGenericActionRumble : currentRumble);
+                currentRumble = null;
                 robot.setMotif(motifs[0]);
                 currentAction = null;
                 driveAvailable = true;
