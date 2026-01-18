@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.hardwareMap;
+
 import androidx.annotation.NonNull;
 
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
@@ -11,10 +13,21 @@ import com.seattlesolvers.solverslib.hardware.motors.Motor;
 import com.seattlesolvers.solverslib.hardware.motors.MotorEx;
 import com.seattlesolvers.solverslib.util.InterpLUT;
 
+import org.firstinspires.ftc.teamcode.Localizer;
+import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.everglow_library.Subsystem;
 import org.firstinspires.ftc.teamcode.everglow_library.Utils;
 
 public class Shooter implements Subsystem {
+    Robot robot;
+    private static double[] LUTsDistances = new double[] {
+            14.3,
+            46.2,
+            74.6,
+            96,
+            120.3,
+            136
+    };
 
     // --------------------
     // | Servo Parameters |
@@ -25,26 +38,13 @@ public class Shooter implements Subsystem {
     public static double maxServoAngle = 44.3;
     private static Servo.Direction servoDirection = Servo.Direction.REVERSE;
     private static InterpLUT servoAnglesLUT = Utils.interpLUTFromArrays( //TODO: FILL ME WITH MEASURED VALUES
-            new double[]{
-                    15.5,
-                    30.6,
-                    44.5,
-                    59.3,
-                    75,
-                    89.3,
-                    106.3,
-                    120.3,
-                    135.4
-            },
+            LUTsDistances,
             new double[]{
                     11,
-                    14,
                     18,
-                    23,
                     25,
-                    27,
                     30,
-                    32,
+                    33,
                     33
             }
     );
@@ -56,27 +56,14 @@ public class Shooter implements Subsystem {
     private boolean flywheelShouldSpin = false;
     private static boolean isFlywheelInverted = true;
     private static InterpLUT flywheelSpeedsLUT = Utils.interpLUTFromArrays( //TODO: FILL ME WITH MEASURED VALUES
-            new double[]{
-                    15.5,
-                    30.6,
-                    44.5,
-                    59.3,
-                    75,
-                    89.3,
-                    106.3,
-                    120.3,
-                    135.4
-            },
+            LUTsDistances,
             new double[]{
                     1200,
-                    1170,
-                    1220,
-                    1270,
+                    1260,
                     1360,
-                    1400,
                     1480,
-                    1600,
-                    1650
+                    1650,
+                    1550
             }
     );
 
@@ -102,15 +89,16 @@ public class Shooter implements Subsystem {
 
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            robot.update();
+            givenDistanceFromGoal = robot.calculateDistanceFromGoal();
             flywheelMotor.set(flywheelPIDF.calculate(getFlywheelMotorCurrentTicksPerSecond(), desiredFlywheelSpeed));
 
-            return !isFlywheelFinishedSpinning();
+            return true;
         }
     }
 
     public class AimHoodAction implements Action {
         private double targetPosition;
-        private double step = 0.008;
 
         private AimHoodAction(double pos) {
             targetPosition = pos;
@@ -118,9 +106,19 @@ public class Shooter implements Subsystem {
 
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-            setHoodServoPosition(Math.min(targetServoPosition + step, targetPosition));
+            setHoodServoAngle(getServoAngleForDistanceFromGoal(robot.calculateDistanceFromGoal()));
 
-            return targetServoPosition != targetPosition;
+            return true;
+        }
+    }
+
+    public class WaitUntilShooterSpinupAction implements Action {
+        private WaitUntilShooterSpinupAction() {
+        }
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            return !isFlywheelFinishedSpinning();
         }
     }
 
@@ -128,11 +126,12 @@ public class Shooter implements Subsystem {
     MotorEx flywheelMotor;
     Servo hoodServo;
     public PIDFController flywheelPIDF = new PIDFController(0.025, 0.2, 0, 0.0001);
-    private double desiredFlywheelSpeed = 0; // [ticks/s]
+    public double desiredFlywheelSpeed = 0; // [ticks/s]
     private double targetServoPosition = 0;
 
 
-    public Shooter(HardwareMap hardwareMap) {
+    public Shooter(HardwareMap hardwareMap, Robot robot) {
+        this.robot = robot;
         flywheelMotor = new MotorEx(hardwareMap, "flywheelMotor", Motor.GoBILDA.BARE);
 
         flywheelMotor.setInverted(isFlywheelInverted);
@@ -140,7 +139,6 @@ public class Shooter implements Subsystem {
 
         hoodServo = hardwareMap.get(Servo.class, "hoodServo");
 
-        Utils.setServoPWMRange(hoodServo, 500, 2500);
         hoodServo.setDirection(servoDirection);
     }
 
@@ -181,7 +179,13 @@ public class Shooter implements Subsystem {
     }
 
     private double clampDistance(double distance) {
-        return Math.max(15.5+0.1, Math.min(135.4-0.1, distance));
+        return Math.max(
+                LUTsDistances[0] + 0.1,
+                Math.min(
+                        LUTsDistances[LUTsDistances.length - 1] - 0.1,
+                        distance
+                )
+        );
     }
 
     public void setHoodServoAngle(double angle) {
@@ -215,9 +219,12 @@ public class Shooter implements Subsystem {
     public StartUpShooterAction getStartUpShooterAction(double distanceFromGoal) {
         return new StartUpShooterAction(distanceFromGoal);
     }
+    public WaitUntilShooterSpinupAction getWaitUntilShooterSpinupAction() {
+        return new WaitUntilShooterSpinupAction();
+    }
 
-    public AimHoodAction getAimHoodAction(double wantedPos) {
-        return new AimHoodAction(wantedPos);
+    public AimHoodAction getAimHoodAction(double angle) {
+        return new AimHoodAction(hoodDegreesToServoPosition(angle));
     }
 
     @Override

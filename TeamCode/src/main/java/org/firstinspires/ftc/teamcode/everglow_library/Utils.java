@@ -58,4 +58,34 @@ public class Utils {
 
         return Rotation2d.exp(Math.atan2(closestPointY - botPose.y, closestPointX - botPose.x));
     }
+
+    public static double getOptimalAngleToShoot(Vector2d goalPose, Vector2d botPose) {
+        Vector2d diff = goalPose.minus(botPose);
+        return Math.atan2(diff.y, diff.x);
+    }
+
+    public static double[] normalizeArray(double[] arr) {
+        boolean flag = false;
+        double max = 0;
+        for (int i = 0; i < arr.length; i++) {
+            if (!flag || arr[i] > max) {
+                max = arr[i];
+                flag = true;
+            }
+        }
+        double[] normalized = new double[arr.length];
+        for (int i = 0; i < arr.length; i++) {
+            normalized[i] = arr[i]/max;
+        }
+        return normalized;
+    }
+
+    public static boolean areNormalizedRGBArraysSimilar(double[] color1, double[] color2) {
+        double tolerance = 0.1;
+        return getDistanceOf3dVectors(color1, color2) <= tolerance;
+    }
+
+    public static double getDistanceOf3dVectors(double[] vector1, double[] vector2) {
+        return Math.sqrt((vector1[0] - vector2[0])*(vector1[0] - vector2[0]) + (vector1[1] - vector2[1])*(vector1[1] - vector2[1]) + (vector1[2] - vector2[2])*(vector1[2] - vector2[2]));
+    }
 }

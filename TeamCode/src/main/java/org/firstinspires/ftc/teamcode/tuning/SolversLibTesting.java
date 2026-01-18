@@ -11,7 +11,7 @@ import com.seattlesolvers.solverslib.hardware.motors.MotorEx;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
-@TeleOp(name="SolversLibTesting")
+@TeleOp(name="SolversLibTesting", group="Tests")
 @Config
 public class SolversLibTesting extends LinearOpMode {
     MotorEx testMotor;

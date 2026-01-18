@@ -13,7 +13,7 @@ import com.seattlesolvers.solverslib.hardware.servos.ServoEx;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.everglow_library.Utils;
 
-@TeleOp(name="HoodServoRangeTuning")
+@TeleOp(name="HoodServoRangeTuning", group="Tests")
 @Config
 public class HoodServoRangeTuning extends LinearOpMode {
     public static double pos = 0.5;

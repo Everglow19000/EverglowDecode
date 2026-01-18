@@ -8,6 +8,7 @@ import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
@@ -40,16 +41,19 @@ public class Camera implements Subsystem{
 
             LLResult result = limelight3A.getLatestResult();
             if (result.isValid()) {
-                if (result.getFiducialResults().get(0) != null) {
-                    int discoveredId = result.getFiducialResults().get(0).getFiducialId();
-                    motifWrapper[0] = Motif.values()[discoveredId - 21];
-                    isFinished = true;
+                for (LLResultTypes.FiducialResult fiducialResult : result.getFiducialResults()) {
+                    if (fiducialResult.getFiducialId() == 21 || fiducialResult.getFiducialId() == 22 || fiducialResult.getFiducialId() == 23) {
+                        motifWrapper[0] = Motif.values()[fiducialResult.getFiducialId() - 21];
+                        isFinished = true;
+                    }
                 }
             }
 
-            isFinished = (System.currentTimeMillis() - startTime) > timeUntilBail || isFinished;
+            if ((System.currentTimeMillis() - startTime) > timeUntilBail && motifWrapper[0] == null) {
+                motifWrapper[0] = Motif.NONE;
+            }
 
-            return !isFinished;
+            return !isFinished && (System.currentTimeMillis() - startTime) <= timeUntilBail;
         }
     }
 
@@ -77,7 +81,15 @@ public class Camera implements Subsystem{
             }
             LLResult result = limelight3A.getLatestResult();
             if (result.isValid()) {
-                locations[index] = result.getBotpose();
+                Pose3D currPose = null;
+
+                for (int i = 0; i < result.getFiducialResults().size(); i++) {
+                    currPose = result.getFiducialResults().get(i).getRobotPoseFieldSpace();
+                }
+
+                if (currPose != null) {
+                    locations[index] = currPose;
+                }
                 index++;
             }
 
@@ -103,6 +115,10 @@ public class Camera implements Subsystem{
         limelight3A.start();
     }
 
+    public void setPipeline(int pipeline) {
+        limelight3A.pipelineSwitch(pipeline);
+    }
+
     public DetermineMotifAction getDetermineMotifAction(Motif[] motifWrapper) {
         return new DetermineMotifAction(500.0, motifWrapper);
     }
@@ -118,6 +134,10 @@ public class Camera implements Subsystem{
 
     @Override
     public String status() {
-        return "";
+        LLResult currResult = limelight3A.getLatestResult();
+        if (currResult.isValid()) {
+            return "result valid";
+        }
+        return "result not valid";
     }
 }

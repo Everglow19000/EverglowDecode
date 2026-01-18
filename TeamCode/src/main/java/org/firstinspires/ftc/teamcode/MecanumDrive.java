@@ -38,9 +38,12 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
+import com.seattlesolvers.solverslib.controller.PIDController;
+import com.seattlesolvers.solverslib.controller.PIDFController;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+import org.firstinspires.ftc.teamcode.everglow_library.Utils;
 import org.firstinspires.ftc.teamcode.messages.DriveCommandMessage;
 import org.firstinspires.ftc.teamcode.messages.MecanumCommandMessage;
 import org.firstinspires.ftc.teamcode.messages.MecanumLocalizerInputsMessage;
@@ -63,35 +66,37 @@ public final class MecanumDrive {
                 RevHubOrientationOnRobot.UsbFacingDirection.UP;
 
         // drive model parameters
-        public double inPerTick = 1;
-        public double lateralInPerTick = 0.7520767241220867;
-        public double trackWidthTicks = 15.019453018999597;
+        public double inPerTick = 0.002965108;
+        public double lateralInPerTick = 0.002965108;
+        public double trackWidthTicks = 4661.175484209323;
 
         // feedforward parameters (in tick units)
-        public double kS = 0.05857883048303454;
-        public double kV = 0.1836316635149268;
-        public double kA = 0.01;
+        public double kS = 0.9;
+        public double kV = 0.0005;
+        public double kA = 0.0001;
 
         // path profile parameters (in inches)
-        public double maxWheelVel = 50;
-        public double minProfileAccel = -30;
-        public double maxProfileAccel = 50;
+        public double maxWheelVel = 50/2.0;
+        public double minProfileAccel = -30/2.0;
+        public double maxProfileAccel = 50/2.0;
 
         // turn profile parameters (in radians)
-        public double maxAngVel = Math.PI; // shared with path
-        public double maxAngAccel = Math.PI;
+        public double maxAngVel = Math.PI/3.0; // shared with path
+        public double maxAngAccel = Math.PI/3.0;
 
         // path controller gains
-        public double axialGain = 0.0;
-        public double lateralGain = 0.0;
-        public double headingGain = 1.0; // shared with turn
+        public double axialGain = 1;
+        public double lateralGain = 6.0;
+        public double headingGain = 6.0; // shared with turn
 
-        public double axialVelGain = 0.0;
-        public double lateralVelGain = 0.0;
-        public double headingVelGain = 1.0; // shared with turn
+        public double axialVelGain = 1.0;
+        public double lateralVelGain = 1.5;
+        public double headingVelGain = 1.2; // shared with turn
     }
 
     public static Params PARAMS = new Params();
+    public static double holdHeadingP = 1.5;
+    public static double holdHeadingD = 0;
 
     public final MecanumKinematics kinematics = new MecanumKinematics(
             PARAMS.inPerTick * PARAMS.trackWidthTicks, PARAMS.inPerTick / PARAMS.lateralInPerTick);
@@ -113,6 +118,7 @@ public final class MecanumDrive {
     public final LazyImu lazyImu;
 
     public final Localizer localizer;
+    public final OTOSLocalizer otosLocalizer;
     private final LinkedList<Pose2d> poseHistory = new LinkedList<>();
 
     private final DownsampledWriter estimatedPoseWriter = new DownsampledWriter("ESTIMATED_POSE", 50_000_000);
@@ -248,7 +254,8 @@ public final class MecanumDrive {
 
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
 
-        localizer = new OTOSLocalizer(hardwareMap, pose);
+        localizer = new ThreeDeadWheelLocalizer(hardwareMap, PARAMS.inPerTick, pose);
+        otosLocalizer = new OTOSLocalizer(hardwareMap, pose);
 
         FlightRecorder.write("MECANUM_PARAMS", PARAMS);
     }
@@ -266,6 +273,10 @@ public final class MecanumDrive {
         leftBack.setPower(wheelVels.leftBack.get(0) / maxPowerMag);
         rightBack.setPower(wheelVels.rightBack.get(0) / maxPowerMag);
         rightFront.setPower(wheelVels.rightFront.get(0) / maxPowerMag);
+    }
+    
+    public Pose2d getRobotPose() {
+        return new Pose2d(localizer.getPose().position, otosLocalizer.getPose().heading);
     }
 
     public final class FollowTrajectoryAction implements Action {
@@ -317,7 +328,7 @@ public final class MecanumDrive {
                     PARAMS.axialGain, PARAMS.lateralGain, PARAMS.headingGain,
                     PARAMS.axialVelGain, PARAMS.lateralVelGain, PARAMS.headingVelGain
             )
-                    .compute(txWorldTarget, localizer.getPose(), robotVelRobot);
+                    .compute(txWorldTarget, getRobotPose(), robotVelRobot);
             driveCommandWriter.write(new DriveCommandMessage(command));
 
             MecanumKinematics.WheelVelocities<Time> wheelVels = kinematics.inverse(command);
@@ -338,11 +349,11 @@ public final class MecanumDrive {
             rightBack.setPower(rightBackPower);
             rightFront.setPower(rightFrontPower);
 
-            p.put("x", localizer.getPose().position.x);
-            p.put("y", localizer.getPose().position.y);
-            p.put("heading (deg)", Math.toDegrees(localizer.getPose().heading.toDouble()));
+            p.put("x", getRobotPose().position.x);
+            p.put("y", getRobotPose().position.y);
+            p.put("heading (deg)", Math.toDegrees(getRobotPose().heading.toDouble()));
 
-            Pose2d error = txWorldTarget.value().minusExp(localizer.getPose());
+            Pose2d error = txWorldTarget.value().minusExp(getRobotPose());
             p.put("xError", error.position.x);
             p.put("yError", error.position.y);
             p.put("headingError (deg)", Math.toDegrees(error.heading.toDouble()));
@@ -355,7 +366,7 @@ public final class MecanumDrive {
             Drawing.drawRobot(c, txWorldTarget.value());
 
             c.setStroke("#3F51B5");
-            Drawing.drawRobot(c, localizer.getPose());
+            Drawing.drawRobot(c, getRobotPose());
 
             c.setStroke("#4CAF50FF");
             c.setStrokeWidth(1);
@@ -409,7 +420,7 @@ public final class MecanumDrive {
                     PARAMS.axialGain, PARAMS.lateralGain, PARAMS.headingGain,
                     PARAMS.axialVelGain, PARAMS.lateralVelGain, PARAMS.headingVelGain
             )
-                    .compute(txWorldTarget, localizer.getPose(), robotVelRobot);
+                    .compute(txWorldTarget, getRobotPose(), robotVelRobot);
             driveCommandWriter.write(new DriveCommandMessage(command));
 
             MecanumKinematics.WheelVelocities<Time> wheelVels = kinematics.inverse(command);
@@ -436,7 +447,7 @@ public final class MecanumDrive {
             Drawing.drawRobot(c, txWorldTarget.value());
 
             c.setStroke("#3F51B5");
-            Drawing.drawRobot(c, localizer.getPose());
+            Drawing.drawRobot(c, getRobotPose());
 
             c.setStroke("#7C4DFFFF");
             c.fillCircle(turn.beginPose.position.x, turn.beginPose.position.y, 2);
@@ -451,15 +462,62 @@ public final class MecanumDrive {
         }
     }
 
+    public final class HoldHeadingAction implements Action {
+        Robot robot;
+        PIDController controller;
+        private HoldHeadingAction(Robot robot) {
+            this.robot = robot;
+            controller = new PIDController(holdHeadingP, 0, holdHeadingD);
+        }
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            updatePoseEstimate();
+            setDrivePowers(
+                    new PoseVelocity2d(
+                            new Vector2d(0,0),
+                            controller.calculate(getRobotPose().heading.toDouble(), Utils.getOptimalAngleToShoot(robot.goalPoseOrientation, getRobotPose().position))
+                    )
+            );
+            return true;
+        }
+    }
+
+    public final class StopMovingAction implements Action {
+        private StopMovingAction() {
+        }
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            setDrivePowers(
+                    new PoseVelocity2d(
+                            new Vector2d(0,0),
+                            0
+                    )
+            );
+            return false;
+        }
+    }
+
+    public HoldHeadingAction getHoldHeadingAction(Robot robot) {
+        return new HoldHeadingAction(robot);
+    }
+
+    public StopMovingAction getStopMovingAction() {
+        return new StopMovingAction();
+    }
+
     public PoseVelocity2d updatePoseEstimate() {
-        PoseVelocity2d vel = localizer.update();
-        poseHistory.add(localizer.getPose());
+        PoseVelocity2d velLocalizer = localizer.update();
+        PoseVelocity2d velOTOS = otosLocalizer.update();
+        PoseVelocity2d vel = new PoseVelocity2d(velLocalizer.linearVel, velOTOS.angVel);
+        
+        poseHistory.add(getRobotPose());
         
         while (poseHistory.size() > 100) {
             poseHistory.removeFirst();
         }
 
-        estimatedPoseWriter.write(new PoseMessage(localizer.getPose()));
+        estimatedPoseWriter.write(new PoseMessage(getRobotPose()));
         
         
         return vel;

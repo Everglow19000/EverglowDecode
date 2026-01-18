@@ -6,6 +6,7 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.RaceAction;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.Vector2d;
@@ -21,11 +22,8 @@ import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.everglow_library.Utils;
 import org.firstinspires.ftc.teamcode.subsystems.Motif;
 
-import Ori.Coval.Logging.Logger.KoalaLog;
-
-@TeleOp(name="DriverOpMode", group="Driving")
-@Config
-public class DriverOpMode extends LinearOpMode {
+@TeleOp(name="TrainingOpMode FieldCentric Driving", group="Driving")
+public class TrainingOpModeFieldCentric extends LinearOpMode {
     public static double holdHeadingP = MecanumDrive.holdHeadingP;
     public static double holdHeadingD = MecanumDrive.holdHeadingD;
     Robot robot;
@@ -60,12 +58,6 @@ public class DriverOpMode extends LinearOpMode {
             .addStep(0.25, 0.25, 250)
             .addStep(0.5, 0.5, 250)
             .build();
-    Gamepad.RumbleEffect endCameraActionRumble = new Gamepad.RumbleEffect.Builder()
-            .addStep(1, 0, 250)
-            .addStep(0, 1, 250)
-            .build();
-
-    Gamepad.RumbleEffect currentRumble;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -87,11 +79,7 @@ public class DriverOpMode extends LinearOpMode {
 
         GamepadEx gamepad = new GamepadEx(gamepad1);
 
-        GamepadEx loggerGamepad = new GamepadEx(gamepad2);
-
         Action currentAction = null;
-
-        KoalaLog.setup(hardwareMap);
 
         waitForStart();
 
@@ -104,68 +92,44 @@ public class DriverOpMode extends LinearOpMode {
         while (opModeIsActive()) {
             robot.update();
             gamepad.readButtons();
-            loggerGamepad.readButtons();
             MecanumDrive.holdHeadingP = holdHeadingP;
             MecanumDrive.holdHeadingD = holdHeadingD;
-
-            if (loggerGamepad.wasJustPressed(GamepadKeys.Button.CROSS)) {
-                KoalaLog.logPose2d("Shoot fail - undershoot - pose", robot.drive.localizer.getPose().position.x, robot.drive.localizer.getPose().position.y, robot.drive.localizer.getPose().heading.toDouble(), false);
-                KoalaLog.log("Shoot fail - undershoot - speed", robot.shooter.getFlywheelMotorCurrentTicksPerSecond(), false);
-                KoalaLog.log("Shoot fail - undershoot - angle", robot.shooter.servoPositionToHoodDegrees(robot.shooter.getHoodServoPosition()), false);
-            }
-            else if (loggerGamepad.wasJustPressed(GamepadKeys.Button.SQUARE)) {
-                KoalaLog.logPose2d("Shoot fail - overshoot - pose", robot.drive.localizer.getPose().position.x, robot.drive.localizer.getPose().position.y, robot.drive.localizer.getPose().heading.toDouble(), false);
-                KoalaLog.log("Shoot fail - overshoot - speed", robot.shooter.getFlywheelMotorCurrentTicksPerSecond(), false);
-                KoalaLog.log("Shoot fail - overshoot - angle", robot.shooter.servoPositionToHoodDegrees(robot.shooter.getHoodServoPosition()), false);
-            }
-            if (loggerGamepad.wasJustPressed(GamepadKeys.Button.CROSS)) {
-                KoalaLog.logPose2d("Shoot fail - incorrect heading - pose", robot.drive.localizer.getPose().position.x, robot.drive.localizer.getPose().position.y, robot.drive.localizer.getPose().heading.toDouble(), false);
-                KoalaLog.log("Shoot fail - incorrect heading - speed", robot.shooter.getFlywheelMotorCurrentTicksPerSecond(), false);
-                KoalaLog.log("Shoot fail - incorrect heading - angle", robot.shooter.servoPositionToHoodDegrees(robot.shooter.getHoodServoPosition()), false);
-            }
 
             if (robot.feedingMechanism.isNowStoppedIntaking()) {
                 gamepad.gamepad.runRumbleEffect(endSpindexerActionRumble);
             }
 
-            if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.CROSS)) {
+            if (gamepad.wasJustPressed(GamepadKeys.Button.CROSS)) {
                 driveAvailable = false;
                 shooterAvailable = false;
                 spindexerAvailable = false;
-                currentRumble = endShootActionRumble;
+                robot.shooter.setFlywheelMotorSpeed(1200);
                 currentAction = new SequentialAction(
-                        robot.getOrientRobotForShootAction(),
-                        new RaceAction(
-                                robot.drive.getHoldHeadingAction(robot),
-                                robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
-                                robot.getLaunchAllArtifactsAction()
-                        ),
-                        robot.drive.getStopMovingAction(),
+                        robot.getLaunchAllArtifactsAction(),
                         robot.getStopShooterAction()
                 );
             }
-            else if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.SQUARE)) {
+            else if (gamepad.wasJustPressed(GamepadKeys.Button.SQUARE)) {
                 driveAvailable = false;
-                currentRumble = endCameraActionRumble;
-                currentAction = new SequentialAction(
-                        robot.getLocalizeWithApriltagAction(position),
-                        new UpdateRobotPoseAction(robot, position)
-                );
+                currentAction = robot.getMotifFromObeliskAction(motifs);
             }
-            else if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.TRIANGLE)) {
+            else if (gamepad.wasJustPressed(GamepadKeys.Button.TRIANGLE)) {
                 spindexerAvailable = false;
                 currentAction = robot.getScanArtifactColorsAction();
             }
 
-            if (currentAction == null && spindexerAvailable && gamepad.wasJustPressed(GamepadKeys.Button.RIGHT_BUMPER)) {
+            if (spindexerAvailable && gamepad.wasJustPressed(GamepadKeys.Button.RIGHT_BUMPER)) {
                 robot.startIntake();
             }
-            else if (currentAction == null && !spindexerAvailable || gamepad.wasJustPressed(GamepadKeys.Button.LEFT_BUMPER)) {
+            else if (!spindexerAvailable || gamepad.wasJustPressed(GamepadKeys.Button.LEFT_BUMPER)) {
                 robot.stopIntake();
             }
 
             if (driveAvailable) {
-                robot.calculateDrivePowers(gamepad);
+                robot.calculateDrivePowers(gamepad, true);
+            }
+            else {
+                robot.drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0), 0));
             }
 
 
@@ -177,13 +141,10 @@ public class DriverOpMode extends LinearOpMode {
                 driveAvailable = true;
                 shooterAvailable = true;
                 spindexerAvailable = true;
-                gamepad.gamepad.runRumbleEffect(endGenericActionRumble);
-                currentRumble = null;
                 robot.stopShooterMotor();
             }
             if (currentAction != null && !currentAction.run(new TelemetryPacket())) {
-                gamepad.gamepad.runRumbleEffect(currentRumble == null ? endGenericActionRumble : currentRumble);
-                currentRumble = null;
+                gamepad.gamepad.runRumbleEffect(endGenericActionRumble);
                 robot.setMotif(motifs[0]);
                 currentAction = null;
                 driveAvailable = true;
@@ -197,8 +158,9 @@ public class DriverOpMode extends LinearOpMode {
             telemetry.addData("feeding mechanism intaking", robot.feedingMechanism.isIntaking());
             telemetry.addData("contents", robot.getFeedingMechanismContents());
             telemetry.addData("position", robot.drive.localizer.getPose().position);
-            telemetry.addData("heading", robot.drive.localizer.getPose().heading.toDouble());
             telemetry.update();
         }
     }
 }
+
+

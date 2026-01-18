@@ -7,10 +7,11 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.subsystems.Camera;
+import org.firstinspires.ftc.teamcode.subsystems.Motif;
 
 import java.util.Arrays;
 
-@TeleOp(name="CameraTest")
+@TeleOp(name="CameraTest", group="Tests")
 public class CameraTest extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
@@ -22,11 +23,16 @@ public class CameraTest extends LinearOpMode {
         waitForStart();
 
         double[] location = new double[3];
+        Motif[] motifWrapper = new Motif[1];
 
         while (opModeIsActive()) {
             if (gamepad1.circle){
-                Actions.runBlocking(camera.getFindLocationAction(location , 50));
+                Actions.runBlocking(camera.getFindLocationAction(location , 250));
             }
+            if (gamepad1.square) {
+                Actions.runBlocking(camera.getDetermineMotifAction(motifWrapper));
+            }
+            telemetry.addData("motif", motifWrapper[0]);
             telemetry.addData("location", Arrays.toString(location));
             telemetry.update();
         }
