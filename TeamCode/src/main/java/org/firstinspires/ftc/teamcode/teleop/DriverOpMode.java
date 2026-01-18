@@ -21,6 +21,8 @@ import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.everglow_library.Utils;
 import org.firstinspires.ftc.teamcode.subsystems.Motif;
 
+import Ori.Coval.Logging.Logger.KoalaLog;
+
 @TeleOp(name="DriverOpMode", group="Driving")
 @Config
 public class DriverOpMode extends LinearOpMode {
@@ -85,7 +87,11 @@ public class DriverOpMode extends LinearOpMode {
 
         GamepadEx gamepad = new GamepadEx(gamepad1);
 
+        GamepadEx loggerGamepad = new GamepadEx(gamepad2);
+
         Action currentAction = null;
+
+        KoalaLog.setup(hardwareMap);
 
         waitForStart();
 
@@ -98,8 +104,25 @@ public class DriverOpMode extends LinearOpMode {
         while (opModeIsActive()) {
             robot.update();
             gamepad.readButtons();
+            loggerGamepad.readButtons();
             MecanumDrive.holdHeadingP = holdHeadingP;
             MecanumDrive.holdHeadingD = holdHeadingD;
+
+            if (loggerGamepad.wasJustPressed(GamepadKeys.Button.CROSS)) {
+                KoalaLog.logPose2d("Shoot fail - undershoot - pose", robot.drive.localizer.getPose().position.x, robot.drive.localizer.getPose().position.y, robot.drive.localizer.getPose().heading.toDouble(), false);
+                KoalaLog.log("Shoot fail - undershoot - speed", robot.shooter.getFlywheelMotorCurrentTicksPerSecond(), false);
+                KoalaLog.log("Shoot fail - undershoot - angle", robot.shooter.servoPositionToHoodDegrees(robot.shooter.getHoodServoPosition()), false);
+            }
+            else if (loggerGamepad.wasJustPressed(GamepadKeys.Button.SQUARE)) {
+                KoalaLog.logPose2d("Shoot fail - overshoot - pose", robot.drive.localizer.getPose().position.x, robot.drive.localizer.getPose().position.y, robot.drive.localizer.getPose().heading.toDouble(), false);
+                KoalaLog.log("Shoot fail - overshoot - speed", robot.shooter.getFlywheelMotorCurrentTicksPerSecond(), false);
+                KoalaLog.log("Shoot fail - overshoot - angle", robot.shooter.servoPositionToHoodDegrees(robot.shooter.getHoodServoPosition()), false);
+            }
+            if (loggerGamepad.wasJustPressed(GamepadKeys.Button.CROSS)) {
+                KoalaLog.logPose2d("Shoot fail - incorrect heading - pose", robot.drive.localizer.getPose().position.x, robot.drive.localizer.getPose().position.y, robot.drive.localizer.getPose().heading.toDouble(), false);
+                KoalaLog.log("Shoot fail - incorrect heading - speed", robot.shooter.getFlywheelMotorCurrentTicksPerSecond(), false);
+                KoalaLog.log("Shoot fail - incorrect heading - angle", robot.shooter.servoPositionToHoodDegrees(robot.shooter.getHoodServoPosition()), false);
+            }
 
             if (robot.feedingMechanism.isNowStoppedIntaking()) {
                 gamepad.gamepad.runRumbleEffect(endSpindexerActionRumble);
