@@ -19,7 +19,7 @@ import org.firstinspires.ftc.teamcode.subsystems.Motif;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 
 public class Robot extends RobotBase {
-    public static Vector2d goalPoseDistanceStatic = new Vector2d(-62, -60);
+    public static Vector2d goalPoseDistanceStatic = new Vector2d(-58.374, -55.641);
     public static Vector2d goalPoseOrientationStatic = new Vector2d(-75, -55);
     public static Vector2d goalEdge1Static = new Vector2d(-52, -61);
     public static Vector2d goalEdge2Static = new Vector2d(-66, -51);
@@ -39,6 +39,7 @@ public class Robot extends RobotBase {
 
     public boolean usedLastPose = false;
     private int iterationCount = 0;
+    private boolean isBlue;
     public Robot(HardwareMap hardwareMap, boolean isBlue, boolean isAuto, Motif motif) {
         goalEdge1 = new Vector2d(goalEdge1Static.x, goalEdge1Static.y*(isBlue ? 1 : -1));
         goalEdge2 = new Vector2d(goalEdge2Static.x, goalEdge2Static.y*(isBlue ? 1 : -1));
@@ -55,10 +56,12 @@ public class Robot extends RobotBase {
             this.drive = new MecanumDrive(hardwareMap, lastActivationEndPose);
             usedLastPose = true;
         }
-        camera = new Camera(hardwareMap);
+        camera = new Camera(hardwareMap, drive.localizer);
         intake = new Intake(hardwareMap);
         shooter = new Shooter(hardwareMap, this);
         feedingMechanism = new FeedingMechanism(hardwareMap, motif);
+
+        this.isBlue = isBlue;
 
         camera.start();
 
@@ -144,6 +147,9 @@ public class Robot extends RobotBase {
         return feedingMechanism.getStoredArtifacts();
     }
     public double calculateDistanceFromGoal() {
+        if (camera.getDistanceFromAprilTag(isBlue) != -1) {
+            return camera.getDistanceFromAprilTag(isBlue);
+        }
         Vector2d diff = goalPoseDistance.minus(drive.localizer.getPose().position);
 
         return Math.sqrt(Math.pow(diff.x, 2) + Math.pow(diff.y, 2));
