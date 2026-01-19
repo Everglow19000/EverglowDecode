@@ -86,7 +86,7 @@ public class Robot extends RobotBase {
     public Action getOrientRobotForShootAction() {
         return drive.actionBuilder(drive.localizer.getPose())
 //                .turnTo(Utils.getOptimalAngleToShoot(goalEdge1, goalEdge2, drive.localizer.getPose().position))
-                .turnTo(Utils.getOptimalAngleToShoot(goalPoseOrientation, drive.localizer.getPose().position))
+                .turnTo(Utils.getOptimalAngleToShoot(goalPoseDistance, drive.localizer.getPose().position))
                 .build();
     }
 
@@ -98,6 +98,10 @@ public class Robot extends RobotBase {
     // [x, y, heading]
     public Action getLocalizeWithApriltagAction(double[] pose) {
         return camera.getFindLocationAction(pose, 200);
+    }
+
+    public Action getLocalizeWithApriltagAction(double[] pose, boolean isMT2) {
+        return camera.getFindLocationAction(pose, isMT2 ? 200 : 400, isMT2);
     }
 
     // the contents of motif[0] will be changed according to the Motif on the obelisk

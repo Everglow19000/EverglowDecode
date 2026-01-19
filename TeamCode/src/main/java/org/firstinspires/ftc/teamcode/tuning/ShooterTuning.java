@@ -38,7 +38,7 @@ public class ShooterTuning extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-        robot = new Robot(this.hardwareMap, false);
+        robot = new Robot(this.hardwareMap, true);
 
         double[] position = new double[3];
 
@@ -50,7 +50,7 @@ public class ShooterTuning extends LinearOpMode {
 
         waitForStart();
 
-        Actions.runBlocking(robot.getLocalizeWithApriltagAction(position));
+        Actions.runBlocking(robot.getLocalizeWithApriltagAction(position, false));
 
         robot.drive.localizer.setPose(new Pose2d(position[0], position[1], position[2]));
 

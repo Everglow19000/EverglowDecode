@@ -18,7 +18,7 @@ import org.firstinspires.ftc.teamcode.everglow_library.Subsystem;
 import org.firstinspires.ftc.teamcode.everglow_library.Utils;
 
 public class FeedingMechanism implements Subsystem {
-    public static double artifactDistanceFromSensor = 35;
+    public static double artifactDistanceFromSensor = 39;
     public static double restOfRobotDistanceFromSensor = 42;
     public static double analogInputMin = 0.05484;
     public static double analogInputMax = 0.94939;

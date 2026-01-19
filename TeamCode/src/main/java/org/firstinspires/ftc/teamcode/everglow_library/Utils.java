@@ -81,7 +81,7 @@ public class Utils {
     }
 
     public static boolean areNormalizedRGBArraysSimilar(double[] color1, double[] color2) {
-        double tolerance = 0.1;
+        double tolerance = 0.15;
         return getDistanceOf3dVectors(color1, color2) <= tolerance;
     }
 
