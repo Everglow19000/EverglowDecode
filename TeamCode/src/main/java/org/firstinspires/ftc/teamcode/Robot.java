@@ -4,6 +4,7 @@ import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.PoseVelocity2d;
+import com.acmerobotics.roadrunner.Rotation2d;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -23,10 +24,10 @@ public class Robot extends RobotBase {
     public static Vector2d goalPoseOrientationStatic = new Vector2d(-75, -55);
     public static Vector2d goalEdge1Static = new Vector2d(-52, -61);
     public static Vector2d goalEdge2Static = new Vector2d(-66, -51);
-    private Vector2d goalPoseDistance;
+    public Vector2d goalPoseDistance;
     public Vector2d goalPoseOrientation;
-    private Vector2d goalEdge1;
-    private Vector2d goalEdge2;
+    public Vector2d goalEdge1;
+    public Vector2d goalEdge2;
 
 
     public static Motif currentMotif;
@@ -85,9 +86,15 @@ public class Robot extends RobotBase {
     }
     public Action getOrientRobotForShootAction() {
         return drive.actionBuilder(drive.localizer.getPose())
-//                .turnTo(Utils.getOptimalAngleToShoot(goalEdge1, goalEdge2, drive.localizer.getPose().position))
-                .turnTo(Utils.getOptimalAngleToShoot(goalPoseDistance, drive.localizer.getPose().position))
+                .turnTo(getOptimalAngleToShoot())
                 .build();
+    }
+
+    public Rotation2d getOptimalAngleToShoot() {
+        if (calculateDistanceFromGoal() >= 100) {
+            return Utils.getOptimalAngleToShoot(goalEdge1, goalEdge2, drive.localizer.getPose().position);
+        }
+        return Utils.getOptimalAngleToShoot(goalPoseDistance, drive.localizer.getPose().position);
     }
 
     public void setEndPose(Pose2d pose) {

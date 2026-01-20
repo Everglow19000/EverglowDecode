@@ -65,11 +65,11 @@ public class ShooterTuning extends LinearOpMode {
                 robot.stopIntake();
             }
 
+            robot.shooter.setHoodServoAngle(servoAngle);
+            robot.shooter.setFlywheelMotorSpeed(tickPerSecond);
             if (shootingAction == null) {
                 robot.calculateDrivePowers(gamepad);
                 if (gamepad.wasJustPressed(GamepadKeys.Button.CROSS)) {
-                    robot.shooter.setHoodServoAngle(servoAngle);
-                    robot.shooter.setFlywheelMotorSpeed(tickPerSecond);
                     shootingAction = new SequentialAction(
                             robot.getOrientRobotForShootAction(),
                             robot.getLaunchAllArtifactsAction(),

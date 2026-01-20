@@ -48,8 +48,8 @@ public class CloseAutonomous {
         double[] position = new double[3];
 
         Actions.runBlocking(
-                new SequentialAction(
-                        robot.getLocalizeWithApriltagAction(position),
+                new ParallelAction(
+                        robot.getLocalizeWithApriltagAction(position, false),
                         robot.getScanArtifactColorsAction()
                 )
         );
@@ -156,7 +156,7 @@ public class CloseAutonomous {
                 }
             }
 
-            if (actionToProcess >= 1 && !actionRunResult && currentAction == null) {
+            if (actionToProcess >= 1 && actionRunResult && currentAction == null) {
                 robot.drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0), 0));
             }
 

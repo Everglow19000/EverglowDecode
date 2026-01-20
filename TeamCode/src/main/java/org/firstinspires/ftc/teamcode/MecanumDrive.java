@@ -469,7 +469,7 @@ public final class MecanumDrive {
             setDrivePowers(
                     new PoseVelocity2d(
                             new Vector2d(0,0),
-                            controller.calculate(localizer.getPose().heading.toDouble(), Utils.getOptimalAngleToShoot(robot.goalPoseOrientation, localizer.getPose().position))
+                            controller.calculate(localizer.getPose().heading.toDouble(), robot.getOptimalAngleToShoot().toDouble())
                     )
             );
             return true;

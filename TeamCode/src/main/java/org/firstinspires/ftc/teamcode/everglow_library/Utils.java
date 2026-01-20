@@ -59,9 +59,9 @@ public class Utils {
         return Rotation2d.exp(Math.atan2(closestPointY - botPose.y, closestPointX - botPose.x));
     }
 
-    public static double getOptimalAngleToShoot(Vector2d goalPose, Vector2d botPose) {
+    public static Rotation2d getOptimalAngleToShoot(Vector2d goalPose, Vector2d botPose) {
         Vector2d diff = goalPose.minus(botPose);
-        return Math.atan2(diff.y, diff.x);
+        return Rotation2d.fromDouble(Math.atan2(diff.y, diff.x));
     }
 
     public static double[] normalizeArray(double[] arr) {

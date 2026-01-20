@@ -5,6 +5,7 @@ import androidx.annotation.NonNull;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.RaceAction;
 import com.acmerobotics.roadrunner.SequentialAction;
@@ -70,7 +71,7 @@ public class DriverOpMode extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         Object isBlueObject = blackboard.get("isBlue");
-        boolean isBlue = false;
+        boolean isBlue = true;
         if (isBlueObject != null) {
             isBlue = (boolean) isBlueObject;
         }
@@ -95,10 +96,10 @@ public class DriverOpMode extends LinearOpMode {
 
         waitForStart();
 
-//        if (!robot.usedLastPose) {
-//            Actions.runBlocking(robot.getLocalizeWithApriltagAction(position));
-//            robot.drive.localizer.setPose(new Pose2d(position[0], position[1], position[2]));
-//        }
+        if (!robot.usedLastPose) {
+            Actions.runBlocking(robot.getLocalizeWithApriltagAction(position, false));
+            robot.drive.localizer.setPose(new Pose2d(position[0], position[1], position[2]));
+        }
 
 
         while (opModeIsActive()) {
@@ -134,7 +135,10 @@ public class DriverOpMode extends LinearOpMode {
                 spindexerAvailable = false;
                 currentRumble = endShootActionRumble;
                 currentAction = new SequentialAction(
-                        robot.getOrientRobotForShootAction(),
+                        new RaceAction(
+                                robot.getOrientRobotForShootAction(),
+                                robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal())
+                        ),
                         new RaceAction(
                                 robot.drive.getHoldHeadingAction(robot),
                                 robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
