@@ -124,6 +124,9 @@ public class DriverOpMode extends LinearOpMode {
                 KoalaLog.log("Shoot fail - incorrect heading - speed", robot.shooter.getFlywheelMotorCurrentTicksPerSecond(), false);
                 KoalaLog.log("Shoot fail - incorrect heading - angle", robot.shooter.servoPositionToHoodDegrees(robot.shooter.getHoodServoPosition()), false);
             }
+            if (loggerGamepad.wasJustPressed(GamepadKeys.Button.TRIANGLE)) {
+                KoalaLog.log("Shoot succeed", "yay", false);
+            }
 
             if (robot.feedingMechanism.isNowStoppedIntaking()) {
                 gamepad.gamepad.runRumbleEffect(endSpindexerActionRumble);
