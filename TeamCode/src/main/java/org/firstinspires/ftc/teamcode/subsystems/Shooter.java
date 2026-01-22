@@ -91,6 +91,7 @@ public class Shooter implements Subsystem {
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
             robot.update();
             givenDistanceFromGoal = robot.calculateDistanceFromGoal();
+            desiredFlywheelSpeed = getFlywheelTicksPerSecondForDistanceFromGoal(givenDistanceFromGoal);
             flywheelMotor.set(flywheelPIDF.calculate(getFlywheelMotorCurrentTicksPerSecond(), desiredFlywheelSpeed));
 
             return true;
