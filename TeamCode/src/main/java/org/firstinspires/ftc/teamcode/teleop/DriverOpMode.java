@@ -78,7 +78,6 @@ public class DriverOpMode extends LinearOpMode {
         robot = new Robot(hardwareMap, isBlue, false, Motif.NONE);
 
         boolean driveAvailable = true;
-        boolean shooterAvailable = true;
         boolean spindexerAvailable = true;
 
         double[] position = new double[3];
@@ -91,6 +90,10 @@ public class DriverOpMode extends LinearOpMode {
         GamepadEx loggerGamepad = new GamepadEx(gamepad2);
 
         Action currentAction = null;
+
+        Action spinUpShooterAction = robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal());
+
+        boolean shouldSpinUpShooter = false;
 
         KoalaLog.setup(hardwareMap);
 
@@ -130,11 +133,11 @@ public class DriverOpMode extends LinearOpMode {
 
             if (robot.feedingMechanism.isNowStoppedIntaking()) {
                 gamepad.gamepad.runRumbleEffect(endSpindexerActionRumble);
+                shouldSpinUpShooter = true;
             }
 
             if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.CROSS)) {
                 driveAvailable = false;
-                shooterAvailable = false;
                 spindexerAvailable = false;
                 currentRumble = endShootActionRumble;
                 currentAction = new SequentialAction(
@@ -155,20 +158,29 @@ public class DriverOpMode extends LinearOpMode {
                 driveAvailable = false;
                 currentRumble = endCameraActionRumble;
                 currentAction = new SequentialAction(
-                        robot.getLocalizeWithApriltagAction(position),
+                        robot.getLocalizeWithApriltagAction(position, false),
                         new UpdateRobotPoseAction(robot, position)
                 );
             }
+            else if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.DPAD_UP)) {
+                currentRumble = endCameraActionRumble;
+                currentAction = robot.getMotifFromObeliskAction(motifs);
+            }
             else if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.TRIANGLE)) {
                 spindexerAvailable = false;
+                currentRumble = endSpindexerActionRumble;
                 currentAction = robot.getScanArtifactColorsAction();
             }
 
             if (currentAction == null && spindexerAvailable && gamepad.wasJustPressed(GamepadKeys.Button.RIGHT_BUMPER)) {
                 robot.startIntake();
             }
-            else if (currentAction == null && !spindexerAvailable || gamepad.wasJustPressed(GamepadKeys.Button.LEFT_BUMPER)) {
+            else if (currentAction == null && !spindexerAvailable || gamepad.wasJustReleased(GamepadKeys.Button.RIGHT_BUMPER)) {
                 robot.stopIntake();
+            }
+
+            if (gamepad.wasJustPressed(GamepadKeys.Button.LEFT_BUMPER)) {
+                shouldSpinUpShooter = !shouldSpinUpShooter;
             }
 
             if (driveAvailable) {
@@ -182,7 +194,6 @@ public class DriverOpMode extends LinearOpMode {
             if (gamepad.wasJustPressed(GamepadKeys.Button.CIRCLE)) {
                 currentAction = null;
                 driveAvailable = true;
-                shooterAvailable = true;
                 spindexerAvailable = true;
                 gamepad.gamepad.runRumbleEffect(endGenericActionRumble);
                 currentRumble = null;
@@ -194,8 +205,11 @@ public class DriverOpMode extends LinearOpMode {
                 robot.setMotif(motifs[0]);
                 currentAction = null;
                 driveAvailable = true;
-                shooterAvailable = true;
                 spindexerAvailable = true;
+            }
+
+            if (shouldSpinUpShooter) {
+                spinUpShooterAction.run(new TelemetryPacket());
             }
 
             Vector2d diff = robot.goalPoseOrientation.minus(robot.drive.localizer.getPose().position);
