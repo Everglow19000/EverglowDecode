@@ -49,8 +49,8 @@ public class CloseAutonomous {
         double[] position = new double[3];
 
         Actions.runBlocking(
-                new SequentialAction(
-                        robot.getLocalizeWithApriltagAction(position),
+                new ParallelAction(
+                        robot.getLocalizeWithApriltagAction(position, false),
                         robot.getScanArtifactColorsAction()
                 )
         );

@@ -21,31 +21,29 @@ import org.firstinspires.ftc.teamcode.everglow_library.Utils;
 public class Shooter implements Subsystem {
     Robot robot;
     private static double[] LUTsDistances = new double[] {
-            14.3,
-            46.2,
-            74.6,
-            96,
-            120.3,
-            136
+            15,
+            45,
+            75,
+            110,
+            135
     };
 
     // --------------------
     // | Servo Parameters |
     // --------------------
-    public static double minServoPosition = 0.275;
-    public static double maxServoPosition = 0.48;
-    public static double minServoAngle = 3.7;
-    public static double maxServoAngle = 44.3;
+    public static double minServoPosition = 0.43;
+    public static double maxServoPosition = 0.645;
+    public static double minServoAngle = 4.95;
+    public static double maxServoAngle = 43.8;
     private static Servo.Direction servoDirection = Servo.Direction.REVERSE;
     private static InterpLUT servoAnglesLUT = Utils.interpLUTFromArrays( //TODO: FILL ME WITH MEASURED VALUES
             LUTsDistances,
             new double[]{
-                    11,
-                    18,
-                    25,
+                    11.5,
                     30,
-                    33,
-                    33
+                    38,
+                    38,
+                    45
             }
     );
 
@@ -58,12 +56,11 @@ public class Shooter implements Subsystem {
     private static InterpLUT flywheelSpeedsLUT = Utils.interpLUTFromArrays( //TODO: FILL ME WITH MEASURED VALUES
             LUTsDistances,
             new double[]{
-                    1200,
-                    1260,
-                    1360,
-                    1480,
-                    1650,
-                    1550
+                    1220,
+                    1280,
+                    1420,
+                    1540,
+                    1680
             }
     );
 

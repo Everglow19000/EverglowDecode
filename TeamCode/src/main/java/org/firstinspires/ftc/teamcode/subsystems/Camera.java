@@ -69,9 +69,11 @@ public class Camera implements Subsystem{
         private Pose3D[] locations;
         private int index = 0;
         private boolean hasStarted = false;
+        private boolean isMT2;
 
         // location is a list of size 3 [x,y,heading]
-        public FindLocationAction(double[] location, int amount) {
+        public FindLocationAction(double[] location, int amount, boolean isMT2) {
+            this.isMT2 = isMT2;
             locations = new Pose3D[amount];
             this.location = location;
             location[0] = 0.0;
@@ -86,10 +88,17 @@ public class Camera implements Subsystem{
 
                 limelight3A.pipelineSwitch(1);
             }
-            limelight3A.updateRobotOrientation(Math.toDegrees(localizer.getPose().heading.toDouble()));
+            if (isMT2) {
+                limelight3A.updateRobotOrientation(Math.toDegrees(localizer.getPose().heading.toDouble()));
+            }
             LLResult result = limelight3A.getLatestResult();
             if (result.isValid()) {
-                locations[index] = result.getBotpose_MT2();
+                if (isMT2) {
+                    locations[index] = result.getBotpose_MT2();
+                }
+                else {
+                    locations[index] = result.getBotpose();
+                }
                 index++;
             }
 
@@ -97,8 +106,16 @@ public class Camera implements Subsystem{
                 for (Pose3D pose3D : locations) {
                     location[0] += pose3D.getPosition().toUnit(DistanceUnit.INCH).x / locations.length;
                     location[1] += pose3D.getPosition().toUnit(DistanceUnit.INCH).y / locations.length;
+                    if (!isMT2) {
+                        location[2] += pose3D.getOrientation().getYaw(AngleUnit.RADIANS) / locations.length;
+                    }
                 }
-                location[2] += localizer.getPose().heading.toDouble();
+                if (isMT2) {
+                    location[2] += localizer.getPose().heading.toDouble();
+                }
+//                else {
+//                    location[2] /= locations.length;
+//                }
                 return false;
             }
             return true;
@@ -107,6 +124,8 @@ public class Camera implements Subsystem{
 
     public Limelight3A limelight3A;
     private Localizer localizer;
+
+    public boolean isUpdatePoseOnUpdate = true;
 
     public Camera(HardwareMap hardwareMap, Localizer localizer) {
         limelight3A = hardwareMap.get(Limelight3A.class, "limelight");
@@ -159,7 +178,11 @@ public class Camera implements Subsystem{
     }
 
     public FindLocationAction getFindLocationAction(double[] location, int amount) {
-        return new FindLocationAction(location, amount);
+        return new FindLocationAction(location, amount, true);
+    }
+
+    public FindLocationAction getFindLocationAction(double[] location, int amount, boolean isMT2) {
+        return new FindLocationAction(location, amount, isMT2);
     }
 
     @Override
@@ -170,7 +193,7 @@ public class Camera implements Subsystem{
             if (result.getPipelineIndex() != 1) {
                 limelight3A.pipelineSwitch(1);
             }
-            else {
+            else if (isUpdatePoseOnUpdate) {
                 double x = result.getBotpose_MT2().getPosition().toUnit(DistanceUnit.INCH).x;
                 double y = result.getBotpose_MT2().getPosition().toUnit(DistanceUnit.INCH).y;
 
