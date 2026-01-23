@@ -20,6 +20,7 @@ import org.firstinspires.ftc.teamcode.subsystems.Motif;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 
 public class Robot extends RobotBase {
+    private static double CAMERA_RELIABALITY_DISTANCE = 100;
     public static Vector2d goalPoseDistanceStatic = new Vector2d(-58.374, -55.641);
     public static Vector2d goalPoseOrientationStatic = new Vector2d(-75, -55);
     public static Vector2d goalEdge1Static = new Vector2d(-52, -61);
@@ -41,6 +42,8 @@ public class Robot extends RobotBase {
     public boolean usedLastPose = false;
     private int iterationCount = 0;
     private boolean isBlue;
+    private double distanceCache = -1;
+    private int distanceCacheIteration = 0;
     public Robot(HardwareMap hardwareMap, boolean isBlue, boolean isAuto, Motif motif) {
         goalEdge1 = new Vector2d(goalEdge1Static.x, goalEdge1Static.y*(isBlue ? 1 : -1));
         goalEdge2 = new Vector2d(goalEdge2Static.x, goalEdge2Static.y*(isBlue ? 1 : -1));
@@ -79,6 +82,8 @@ public class Robot extends RobotBase {
     }
     public void update() {
         iterationCount++;
+        distanceCache = calculateDistanceFromGoal();
+        distanceCacheIteration = iterationCount;
         updateSubsystems();
         if (feedingMechanism.isNowStoppedIntaking()) {
             stopIntake();
@@ -91,7 +96,7 @@ public class Robot extends RobotBase {
     }
 
     public Rotation2d getOptimalAngleToShoot() {
-        if (calculateDistanceFromGoal() >= 100) {
+        if (calculateDistanceFromGoal() >= CAMERA_RELIABALITY_DISTANCE) {
             return Utils.getOptimalAngleToShoot(goalEdge1, goalEdge2, drive.localizer.getPose().position);
         }
         return Utils.getOptimalAngleToShoot(goalPoseDistance, drive.localizer.getPose().position);
@@ -158,12 +163,25 @@ public class Robot extends RobotBase {
         return feedingMechanism.getStoredArtifacts();
     }
     public double calculateDistanceFromGoal() {
-        if (camera.getDistanceFromAprilTag(isBlue) != -1) {
-            return camera.getDistanceFromAprilTag(isBlue);
+        if (iterationCount == distanceCacheIteration) {
+            return distanceCache;
         }
-        Vector2d diff = goalPoseDistance.minus(drive.localizer.getPose().position);
 
-        return Math.sqrt(Math.pow(diff.x, 2) + Math.pow(diff.y, 2));
+        double cameraDistance = camera.getDistanceFromAprilTag(isBlue);
+        Vector2d diff = goalPoseDistance.minus(drive.localizer.getPose().position);
+        double positionDistance = Math.sqrt(Math.pow(diff.x, 2) + Math.pow(diff.y, 2));
+        if (cameraDistance == -1) {
+            return positionDistance;
+        }
+
+        if (cameraDistance >= CAMERA_RELIABALITY_DISTANCE || positionDistance >= CAMERA_RELIABALITY_DISTANCE) {
+            camera.isUpdatePoseOnUpdate = false;
+        }
+        else if (cameraDistance < CAMERA_RELIABALITY_DISTANCE && positionDistance < CAMERA_RELIABALITY_DISTANCE) {
+            camera.isUpdatePoseOnUpdate = true;
+        }
+
+        return cameraDistance <= CAMERA_RELIABALITY_DISTANCE ? cameraDistance : positionDistance;
     }
 
     public void setMotif(Motif motif) {

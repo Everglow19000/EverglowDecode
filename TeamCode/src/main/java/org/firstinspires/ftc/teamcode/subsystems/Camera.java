@@ -125,6 +125,8 @@ public class Camera implements Subsystem{
     public Limelight3A limelight3A;
     private Localizer localizer;
 
+    public boolean isUpdatePoseOnUpdate = true;
+
     public Camera(HardwareMap hardwareMap, Localizer localizer) {
         limelight3A = hardwareMap.get(Limelight3A.class, "limelight");
         this.localizer = localizer;
@@ -191,7 +193,7 @@ public class Camera implements Subsystem{
             if (result.getPipelineIndex() != 1) {
                 limelight3A.pipelineSwitch(1);
             }
-            else {
+            else if (isUpdatePoseOnUpdate) {
                 double x = result.getBotpose_MT2().getPosition().toUnit(DistanceUnit.INCH).x;
                 double y = result.getBotpose_MT2().getPosition().toUnit(DistanceUnit.INCH).y;
 

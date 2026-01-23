@@ -56,11 +56,11 @@ public class Shooter implements Subsystem {
     private static InterpLUT flywheelSpeedsLUT = Utils.interpLUTFromArrays( //TODO: FILL ME WITH MEASURED VALUES
             LUTsDistances,
             new double[]{
-                    1200,
-                    1250,
-                    1400,
-                    1520,
-                    1660
+                    1220,
+                    1280,
+                    1420,
+                    1540,
+                    1680
             }
     );
 
@@ -88,6 +88,7 @@ public class Shooter implements Subsystem {
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
             robot.update();
             givenDistanceFromGoal = robot.calculateDistanceFromGoal();
+            desiredFlywheelSpeed = getFlywheelTicksPerSecondForDistanceFromGoal(givenDistanceFromGoal);
             flywheelMotor.set(flywheelPIDF.calculate(getFlywheelMotorCurrentTicksPerSecond(), desiredFlywheelSpeed));
 
             return true;
