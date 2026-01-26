@@ -22,8 +22,8 @@ import org.firstinspires.ftc.teamcode.everglow_library.Utils;
 import java.util.Arrays;
 
 public class FeedingMechanism implements Subsystem {
-    public static double artifactDistanceFromSensor = 39;
-    public static double restOfRobotDistanceFromSensor = 42;
+    public static double artifactDistanceFromSensor1 = 35.5;
+    public static double artifactDistanceFromSensor2 = 45.5;
     public static double analogInputMin = 0.05484;
     public static double analogInputMax = 0.94939;
     public static double spindexerEncoderTolerance = 0.005;
@@ -284,10 +284,10 @@ public class FeedingMechanism implements Subsystem {
         double sensor2Distance = colorSensor2.getDistance(DistanceUnit.MM);
 
         if (!updateLastColor) {
-            return sensor1Distance <= artifactDistanceFromSensor || sensor2Distance <= artifactDistanceFromSensor;
+            return sensor1Distance <= artifactDistanceFromSensor1 || sensor2Distance <= artifactDistanceFromSensor2;
         }
 
-        if (!(sensor1Distance <= artifactDistanceFromSensor || sensor2Distance <= artifactDistanceFromSensor)) {
+        if (!(sensor1Distance <= artifactDistanceFromSensor1 || sensor2Distance <= artifactDistanceFromSensor2)) {
             lastColor = null;
             lastArtifactColor = null;
             return false;
@@ -299,10 +299,10 @@ public class FeedingMechanism implements Subsystem {
         ArtifactColor color1 = null;
         ArtifactColor color2 = null;
 
-        if (sensor1Distance <= artifactDistanceFromSensor) {
+        if (sensor1Distance <= artifactDistanceFromSensor1) {
             color1 = matchColor(color1Value);
         }
-        if (sensor2Distance <= artifactDistanceFromSensor) {
+        if (sensor2Distance <= artifactDistanceFromSensor2) {
             color2 = matchColor(color2Value);
         }
 

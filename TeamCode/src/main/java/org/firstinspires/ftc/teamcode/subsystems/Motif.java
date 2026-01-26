@@ -13,4 +13,17 @@ public enum Motif {
         sequence[1] = color1;
         sequence[2] = color2;
     }
+
+    public Motif getNext() {
+        if (this == GPP) {
+            return PGP;
+        }
+        else if (this == PGP) {
+            return PPG;
+        }
+        else if (this == PPG) {
+            return GPP;
+        }
+        return this;
+    }
 }

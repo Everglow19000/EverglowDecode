@@ -63,7 +63,7 @@ public class Robot extends RobotBase {
     }
     private static double CAMERA_RELIABALITY_DISTANCE = 100;
     public static Vector2d goalPoseDistanceStatic = new Vector2d(-58.374, -55.641);
-    public static Vector2d goalPoseOrientationStatic = new Vector2d(-75, -55);
+    public static Vector2d goalPoseOrientationStatic = new Vector2d(-62, -60.2);
     public static Vector2d goalEdge1Static = new Vector2d(-52, -61);
     public static Vector2d goalEdge2Static = new Vector2d(-66, -51);
     public Vector2d goalPoseDistance;
@@ -139,6 +139,9 @@ public class Robot extends RobotBase {
     public Rotation2d getOptimalAngleToShoot() {
         if (calculateDistanceFromGoal() >= CAMERA_RELIABALITY_DISTANCE) {
             return Utils.getOptimalAngleToShoot(goalEdge1, goalEdge2, drive.localizer.getPose().position);
+        }
+        if (calculateDistanceFromGoal() >= 40) {
+            return Utils.getOptimalAngleToShoot(goalPoseOrientation, drive.localizer.getPose().position);
         }
         return Utils.getOptimalAngleToShoot(goalPoseDistance, drive.localizer.getPose().position);
     }
@@ -260,6 +263,14 @@ public class Robot extends RobotBase {
     public void stopIntake(){ //stop intake
         intake.stopIntake();
         feedingMechanism.stopIntaking();
+    }
+
+    public boolean isIntaking() {
+        return intake.isIntaking();
+    }
+
+    public void reverseIntake() {
+        intake.reverseIntake();
     }
 
     public void setSpindexerPosition(FeedingMechanism.SpindexerPosition position) {
