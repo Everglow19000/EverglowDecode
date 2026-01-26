@@ -56,20 +56,22 @@ public class CloseAutonomous {
                 )
         );
 
-        opMode.telemetry.addData("stored", robot.getFeedingMechanismContents());
-        opMode.telemetry.update();
-
         Pose2d startingPlace = new Pose2d(position[0], position[1], position[2]);
+
+        opMode.telemetry.addData("stored", robot.getFeedingMechanismContents());
+
+        opMode.telemetry.addData("position", startingPlace.position);
+        opMode.telemetry.addData("heading", startingPlace.heading.toDouble());
+        opMode.telemetry.update();
 
         robot.drive.localizer.setPose(startingPlace);
         MecanumDrive drive = robot.drive;
 
         TrajectoryActionBuilder b_MoveToScanObelisk = drive.actionBuilder(startingPlace)
                 .setTangent(startingPlace.heading)
-                .splineToSplineHeading(new Pose2d(-36, -18 * isBlueValue, Math.toRadians(135 * isBlueValue)), (Math.PI/2.0) * isBlueValue);
+                .strafeToSplineHeading(new Vector2d(-36, -18 * isBlueValue), Math.toRadians(135 * isBlueValue));
 
         TrajectoryActionBuilder b_MoveToArtifact1 = b_MoveToScanObelisk.endTrajectory().fresh()
-                .setTangent(Math.toRadians(45 * isBlueValue))
                 .splineToSplineHeading(new Pose2d(-12, -30 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90))
                 .splineTo(new Vector2d(-12, -50 * isBlueValue), Math.toRadians(-90 * isBlueValue));
 
@@ -77,7 +79,7 @@ public class CloseAutonomous {
                 .splineTo(new Vector2d(-30, -28 * isBlueValue), Math.toRadians(225 * isBlueValue));
 
         TrajectoryActionBuilder b_MoveToOutOfLine = b_MoveToScanObelisk.endTrajectory().fresh()
-                .splineToSplineHeading(new Pose2d(0, -48 * isBlueValue, Math.toRadians(180)), (Math.PI/2.0) * isBlueValue);
+                .splineToSplineHeading(new Pose2d(0, -48 * isBlueValue, Math.toRadians(180)), -(Math.PI/2.0) * isBlueValue);
 
 
         Action MoveToScanObelisk = b_MoveToScanObelisk.build();
@@ -98,7 +100,7 @@ public class CloseAutonomous {
                                             new SequentialAction(
                                                     new RaceAction(
                                                             MoveToScanObelisk,
-                                                            robot.getMotifFromObeliskAction(motifHolder, 1500.0)
+                                                            robot.getMotifFromObeliskAction(motifHolder, 3000)
                                                     ),
                                                     actions.getUpdateMotifAction(motifHolder),
                                                     robot.getOrientRobotForShootAction()
@@ -115,13 +117,19 @@ public class CloseAutonomous {
                                     robot.getStopShooterAction(),
 
                                     new ParallelAction(
-                                            robot.getIntakeThreeAction(5),
+                                            robot.getIntakeThreeAction(3),
                                             MoveToArtifact1
                                     ),
 
-                                    MoveToShootingPlace,
+                                    new RaceAction(
+                                            new SequentialAction(
+                                                    MoveToShootingPlace,
 
-                                    robot.getOrientRobotForShootAction(),
+                                                    robot.getOrientRobotForShootAction()
+                                            ),
+                                            robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal())
+                                    ),
+
 
                                     new RaceAction(
                                         robot.drive.getHoldHeadingAction(robot),
@@ -129,7 +137,7 @@ public class CloseAutonomous {
                                         robot.getLaunchAllArtifactsAction()
                                     )
                             ),
-                            new SleepAction(25-opMode.getRuntime())
+                            new SleepAction(26.5-opMode.getRuntime())
                         ),
                                 new ParallelAction(
                                         MoveToOutOfLine,
