@@ -14,6 +14,7 @@ import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.MecanumDrive;
@@ -86,46 +87,47 @@ public class CloseAutonomous {
 
         Motif[] motifHolder = new Motif[1];
 
-        Actions.runBlocking(
-                new SequentialAction(
-                        MoveToScanObelisk,
-                        robot.getMotifFromObeliskAction(motifHolder)
-                )
-        );
+        AutonomousActions actions = new AutonomousActions(robot);
 
-
-
-        opMode.telemetry.addData("motif", motifHolder[0]);
-
-        robot.setMotif(motifHolder[0]);
 
         Actions.runBlocking(
                 new SequentialAction(
                         new RaceAction(
                             new SequentialAction(
-                            robot.getOrientRobotForShootAction(),
+                                    new RaceAction(
+                                            new SequentialAction(
+                                                    new RaceAction(
+                                                            MoveToScanObelisk,
+                                                            robot.getMotifFromObeliskAction(motifHolder, 1500.0)
+                                                    ),
+                                                    actions.getUpdateMotifAction(motifHolder),
+                                                    robot.getOrientRobotForShootAction()
+                                            ),
+                                            robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal())
+                                    ),
 
-                            new RaceAction(
-                                    robot.drive.getHoldHeadingAction(robot),
-                                    robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
-                                    robot.getLaunchAllArtifactsAction()
-                            ),
+                                    new RaceAction(
+                                            robot.drive.getHoldHeadingAction(robot),
+                                            robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
+                                            robot.getLaunchAllArtifactsAction()
+                                    ),
 
-                            robot.getStopShooterAction(),
+                                    robot.getStopShooterAction(),
 
-                            robot.getStartIntakeAction(),
-                            MoveToArtifact1,
-                            robot.getStopIntakeAction(),
+                                    new ParallelAction(
+                                            robot.getIntakeThreeAction(5),
+                                            MoveToArtifact1
+                                    ),
 
-                            MoveToShootingPlace,
+                                    MoveToShootingPlace,
 
-                            robot.getOrientRobotForShootAction(),
+                                    robot.getOrientRobotForShootAction(),
 
-                            new RaceAction(
-                                robot.drive.getHoldHeadingAction(robot),
-                                robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
-                                robot.getLaunchAllArtifactsAction()
-                            )
+                                    new RaceAction(
+                                        robot.drive.getHoldHeadingAction(robot),
+                                        robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
+                                        robot.getLaunchAllArtifactsAction()
+                                    )
                             ),
                             new SleepAction(25-opMode.getRuntime())
                         ),

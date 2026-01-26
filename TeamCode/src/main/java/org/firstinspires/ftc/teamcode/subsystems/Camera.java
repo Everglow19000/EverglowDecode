@@ -56,7 +56,7 @@ public class Camera implements Subsystem{
                 }
             }
 
-            if ((System.currentTimeMillis() - startTime) > timeUntilBail && motifWrapper[0] == null) {
+            if ((System.currentTimeMillis() - startTime) > timeUntilBail && !isFinished) {
                 motifWrapper[0] = Motif.NONE;
             }
 
@@ -173,8 +173,12 @@ public class Camera implements Subsystem{
         return -1;
     }
 
+    // timeUntilBail is in MS
+    public DetermineMotifAction getDetermineMotifAction(Motif[] motifWrapper, double timeUntilBail) {
+        return new DetermineMotifAction(timeUntilBail, motifWrapper);
+    }
     public DetermineMotifAction getDetermineMotifAction(Motif[] motifWrapper) {
-        return new DetermineMotifAction(500.0, motifWrapper);
+        return getDetermineMotifAction(motifWrapper, 500);
     }
 
     public FindLocationAction getFindLocationAction(double[] location, int amount) {

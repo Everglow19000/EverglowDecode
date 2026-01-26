@@ -45,7 +45,6 @@ public class FarAutonomous {
 
         Pose2d startingPlace;
 
-        startingPlace = new Pose2d(61.1, -20.7 * isBlueValue, Math.toRadians(180));
 
         double[] location = new double[3];
         Motif[] motifWrapper = new Motif[1];
@@ -56,10 +55,16 @@ public class FarAutonomous {
                                 robot.getMotifFromObeliskAction(motifWrapper),
                                 robot.getScanArtifactColorsAction()
                         ),
-                        robot.getLocalizeWithApriltagAction(location)
+                        robot.getLocalizeWithApriltagAction(location, false)
                 )
         );
 
+        if (location[0] == 0 && location[1] == 0) {
+            startingPlace = new Pose2d(61.1, -20.7 * isBlueValue, Math.toRadians(180));
+        }
+        else {
+            startingPlace = new Pose2d(location[0], location[1], location[2]);
+        }
         opMode.telemetry.addData("stored Artifacts", robot.getFeedingMechanismContents());
 
         robot.setMotif(motifWrapper[0]);
@@ -85,54 +90,56 @@ public class FarAutonomous {
         Action MoveToArtifact2 = b_MoveToArtifact2.build();
         Action MoveToOutOfLine = b_MoveToOutOfLine.build();
         opMode.waitForStart();
-        Action currentAction = new SequentialAction(
-                new RaceAction(
-                        new SequentialAction(
-                                robot.getOrientRobotForShootAction(),
+        Actions.runBlocking(
+                new SequentialAction(
+                        new RaceAction(
+                                new SequentialAction(
+                                        robot.getOrientRobotForShootAction(),
 
-                                new RaceAction(
-                                        robot.drive.getHoldHeadingAction(robot),
-                                        robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
-                                        robot.getLaunchAllArtifactsAction()
+                                        new RaceAction(
+                                                robot.drive.getHoldHeadingAction(robot),
+                                                robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
+                                                robot.getLaunchAllArtifactsAction()
+                                        ),
+
+                                        robot.getStopShooterAction(),
+
+                                        robot.getStartIntakeAction(),
+                                        MoveToArtifact1,
+                                        robot.getStopIntakeAction(),
+
+                                        MoveToShootingPlace,
+
+                                        robot.getOrientRobotForShootAction(),
+
+                                        new RaceAction(
+                                                robot.drive.getHoldHeadingAction(robot),
+                                                robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
+                                                robot.getLaunchAllArtifactsAction()
+                                        ),
+                                        robot.getStopShooterAction(),
+
+                                        robot.getStartIntakeAction(),
+                                        MoveToArtifact2,
+                                        robot.getStopIntakeAction(),
+
+                                        MoveToShootingPlace,
+
+                                        robot.getOrientRobotForShootAction(),
+
+                                        new RaceAction(
+                                                robot.drive.getHoldHeadingAction(robot),
+                                                robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
+                                                robot.getLaunchAllArtifactsAction())
+
                                 ),
-
-                                robot.getStopShooterAction(),
-
-                                robot.getStartIntakeAction(),
-                                MoveToArtifact1,
-                                robot.getStopIntakeAction(),
-
-                                MoveToShootingPlace,
-
-                                robot.getOrientRobotForShootAction(),
-
-                                new RaceAction(
-                                        robot.drive.getHoldHeadingAction(robot),
-                                        robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
-                                        robot.getLaunchAllArtifactsAction()
-                                ),
-                                robot.getStopShooterAction(),
-
-                                robot.getStartIntakeAction(),
-                                MoveToArtifact2,
-                                robot.getStopIntakeAction(),
-
-                                MoveToShootingPlace,
-
-                                robot.getOrientRobotForShootAction(),
-
-                                new RaceAction(
-                                        robot.drive.getHoldHeadingAction(robot),
-                                        robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
-                                        robot.getLaunchAllArtifactsAction())
-
+                                new SleepAction(25-opMode.getRuntime())
                         ),
-                        new SleepAction(25-opMode.getRuntime())
-                ),
-                new ParallelAction(
-                        MoveToOutOfLine,
-                        robot.getStopShooterAction(),
-                        robot.getStopIntakeAction()
+                        new ParallelAction(
+                                MoveToOutOfLine,
+                                robot.getStopShooterAction(),
+                                robot.getStopIntakeAction()
+                        )
                 )
         );
 
