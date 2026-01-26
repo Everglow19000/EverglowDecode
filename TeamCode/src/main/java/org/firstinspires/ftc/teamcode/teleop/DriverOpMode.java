@@ -79,6 +79,7 @@ public class DriverOpMode extends LinearOpMode {
 
         boolean driveAvailable = true;
         boolean spindexerAvailable = true;
+        boolean shooterAvailable = true;
 
         double[] position = new double[3];
         Motif[] motifs = new Motif[1];
@@ -139,6 +140,7 @@ public class DriverOpMode extends LinearOpMode {
             if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.CROSS)) {
                 driveAvailable = false;
                 spindexerAvailable = false;
+                shooterAvailable = false;
                 currentRumble = endShootActionRumble;
                 currentAction = new SequentialAction(
                         new RaceAction(
@@ -179,8 +181,19 @@ public class DriverOpMode extends LinearOpMode {
                 robot.stopIntake();
             }
 
+            if (!robot.isIntaking() && gamepad.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER) > 0.6) {
+                robot.reverseIntake();
+            }
+            if (!robot.isIntaking() && gamepad.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER) <= 0.6) {
+                robot.stopIntake();
+            }
+
             if (gamepad.wasJustPressed(GamepadKeys.Button.LEFT_BUMPER)) {
                 shouldSpinUpShooter = !shouldSpinUpShooter;
+            }
+
+            if (gamepad.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT)) {
+                robot.setMotif(Robot.currentMotif.getNext());
             }
 
             if (driveAvailable) {
@@ -195,6 +208,7 @@ public class DriverOpMode extends LinearOpMode {
                 currentAction = null;
                 driveAvailable = true;
                 spindexerAvailable = true;
+                shooterAvailable = true;
                 gamepad.gamepad.runRumbleEffect(endGenericActionRumble);
                 currentRumble = null;
                 robot.stopShooterMotor();
@@ -206,14 +220,21 @@ public class DriverOpMode extends LinearOpMode {
                 currentAction = null;
                 driveAvailable = true;
                 spindexerAvailable = true;
+                shooterAvailable = true;
+                robot.stopShooterMotor();
+                shouldSpinUpShooter = false;
             }
 
             if (shouldSpinUpShooter) {
                 spinUpShooterAction.run(new TelemetryPacket());
             }
+            else if (shooterAvailable) {
+                robot.stopShooterMotor();
+            }
 
             Vector2d diff = robot.goalPoseOrientation.minus(robot.drive.localizer.getPose().position);
 
+            telemetry.addData("current motif", Robot.currentMotif);
             telemetry.addData("desired angle", Math.atan2(diff.y, diff.x));
             telemetry.addData("feeding mechanism intaking", robot.feedingMechanism.isIntaking());
             telemetry.addData("contents", robot.getFeedingMechanismContents());
