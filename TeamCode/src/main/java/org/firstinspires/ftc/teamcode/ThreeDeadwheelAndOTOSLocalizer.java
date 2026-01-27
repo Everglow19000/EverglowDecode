@@ -19,7 +19,7 @@ public class ThreeDeadwheelAndOTOSLocalizer implements Localizer {
 
     @Override
     public Pose2d getPose() {
-        return deadwheelLocalizer.getPose();
+        return new Pose2d(deadwheelLocalizer.getPose().position, otosLocalizer.getPose().heading);
     }
 
     @Override
@@ -27,6 +27,6 @@ public class ThreeDeadwheelAndOTOSLocalizer implements Localizer {
         PoseVelocity2d otosVel = otosLocalizer.update();
         PoseVelocity2d deadwheelVel = deadwheelLocalizer.update();
 
-        return deadwheelVel;
+        return new PoseVelocity2d(deadwheelVel.linearVel, otosVel.angVel);
     }
 }

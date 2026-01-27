@@ -27,8 +27,24 @@ public class AutonomousActions {
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
             robot.setMotif(motifs[0]);
-            Log.i("AutonomousActions", "updateMotif: " + motifs[0]);
             return false;
+        }
+    }
+    public class OrientRobotForShootAction implements Action {
+        private boolean hasStarted = false;
+        Action turnAction;
+        public OrientRobotForShootAction() {
+        }
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            if (!hasStarted) {
+                hasStarted = true;
+                turnAction = robot.drive.actionBuilder(robot.drive.localizer.getPose())
+                        .turnTo(robot.getOptimalAngleToShoot())
+                        .build();
+            }
+            return turnAction.run(telemetryPacket);
         }
     }
     private Robot robot;
@@ -38,6 +54,9 @@ public class AutonomousActions {
 
     public Action getUpdateMotifAction(Motif[] motifs) {
         return new UpdateMotifAction(motifs);
+    }
+    public Action getOrientRobotForShootAction() {
+        return new OrientRobotForShootAction();
     }
     public Action farLaunchAutonomous(Pose2d pose, boolean isBlue) {
         int isBlueValue = isBlue ? 1 : -1;

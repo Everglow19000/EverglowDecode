@@ -136,14 +136,18 @@ public class Robot extends RobotBase {
                 .build();
     }
 
-    public Rotation2d getOptimalAngleToShoot() {
+    public Rotation2d getOptimalAngleToShoot(Vector2d pose) {
         if (calculateDistanceFromGoal() >= CAMERA_RELIABALITY_DISTANCE) {
-            return Utils.getOptimalAngleToShoot(goalEdge1, goalEdge2, drive.localizer.getPose().position);
+            return Utils.getOptimalAngleToShoot(goalEdge1, goalEdge2, pose);
         }
         if (calculateDistanceFromGoal() >= 40) {
-            return Utils.getOptimalAngleToShoot(goalPoseOrientation, drive.localizer.getPose().position);
+            return Utils.getOptimalAngleToShoot(goalPoseOrientation, pose);
         }
-        return Utils.getOptimalAngleToShoot(goalPoseDistance, drive.localizer.getPose().position);
+        return Utils.getOptimalAngleToShoot(goalPoseDistance, pose);
+    }
+
+    public Rotation2d getOptimalAngleToShoot() {
+        return getOptimalAngleToShoot(drive.localizer.getPose().position);
     }
 
     public void setEndPose(Pose2d pose) {
@@ -157,7 +161,7 @@ public class Robot extends RobotBase {
     }
 
     public Action getLocalizeWithApriltagAction(double[] pose, boolean isMT2) {
-        return camera.getFindLocationAction(pose, isMT2 ? 200 : 800, isMT2);
+        return camera.getFindLocationAction(pose, isMT2 ? 200 : 1600, isMT2);
     }
 
     // the contents of motif[0] will be changed according to the Motif on the obelisk

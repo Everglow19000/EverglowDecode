@@ -11,7 +11,9 @@ import com.acmerobotics.roadrunner.RaceAction;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.SleepAction;
 import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
+import com.acmerobotics.roadrunner.TranslationalVelConstraint;
 import com.acmerobotics.roadrunner.Vector2d;
+import com.acmerobotics.roadrunner.VelConstraint;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -67,22 +69,31 @@ public class CloseAutonomous {
         robot.drive.localizer.setPose(startingPlace);
         MecanumDrive drive = robot.drive;
 
+        Vector2d obeliskScanPosition = new Vector2d(-36, -18 * isBlueValue);
+
         TrajectoryActionBuilder b_MoveToScanObelisk = drive.actionBuilder(startingPlace)
                 .setTangent(startingPlace.heading)
-                .strafeToSplineHeading(new Vector2d(-36, -18 * isBlueValue), Math.toRadians(135 * isBlueValue));
+                .strafeToSplineHeading(obeliskScanPosition, Math.toRadians(120 * isBlueValue));
 
-        TrajectoryActionBuilder b_MoveToArtifact1 = b_MoveToScanObelisk.endTrajectory().fresh()
-                .splineToSplineHeading(new Pose2d(-12, -30 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90))
-                .splineTo(new Vector2d(-12, -50 * isBlueValue), Math.toRadians(-90 * isBlueValue));
+        TrajectoryActionBuilder b_TurnToGoal = b_MoveToScanObelisk.endTrajectory().fresh()
+                .turnTo(robot.getOptimalAngleToShoot(obeliskScanPosition));
+
+        TrajectoryActionBuilder b_MoveToArtifact1 = b_TurnToGoal.endTrajectory().fresh()
+                .setTangent(0)
+                .splineToSplineHeading(new Pose2d(-12, -30 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90 * isBlueValue))
+                .splineTo(new Vector2d(-10, -58 * isBlueValue), Math.toRadians(-90 * isBlueValue), new TranslationalVelConstraint(10));
 
         TrajectoryActionBuilder b_MoveToShootingPlace = b_MoveToArtifact1.endTrajectory().fresh()
-                .splineTo(new Vector2d(-30, -28 * isBlueValue), Math.toRadians(225 * isBlueValue));
+                .setTangent(Math.toRadians(90 * isBlueValue))
+                .splineToSplineHeading(new Pose2d(-30, -28 * isBlueValue, Math.toRadians(-135*isBlueValue)), Math.toRadians(180));
 
-        TrajectoryActionBuilder b_MoveToOutOfLine = b_MoveToScanObelisk.endTrajectory().fresh()
-                .splineToSplineHeading(new Pose2d(0, -48 * isBlueValue, Math.toRadians(180)), -(Math.PI/2.0) * isBlueValue);
+        TrajectoryActionBuilder b_MoveToOutOfLine = b_MoveToShootingPlace.endTrajectory().fresh()
+                .setTangent(0)
+                .splineToSplineHeading(new Pose2d(0, -48 * isBlueValue, Math.toRadians(90 * isBlueValue)), -(Math.PI/2.0) * isBlueValue);
 
 
         Action MoveToScanObelisk = b_MoveToScanObelisk.build();
+        Action TurnToGoal = b_TurnToGoal.build();
         Action MoveToArtifact1 = b_MoveToArtifact1.build();
         Action MoveToShootingPlace = b_MoveToShootingPlace.build();
         Action MoveToOutOfLine = b_MoveToOutOfLine.build();
@@ -98,12 +109,12 @@ public class CloseAutonomous {
                             new SequentialAction(
                                     new RaceAction(
                                             new SequentialAction(
-                                                    new RaceAction(
+                                                    new ParallelAction(
                                                             MoveToScanObelisk,
-                                                            robot.getMotifFromObeliskAction(motifHolder, 3000)
+                                                            robot.getMotifFromObeliskAction(motifHolder, 4000)
                                                     ),
                                                     actions.getUpdateMotifAction(motifHolder),
-                                                    robot.getOrientRobotForShootAction()
+                                                    TurnToGoal
                                             ),
                                             robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal())
                                     ),
@@ -117,7 +128,7 @@ public class CloseAutonomous {
                                     robot.getStopShooterAction(),
 
                                     new ParallelAction(
-                                            robot.getIntakeThreeAction(3),
+                                            robot.getIntakeThreeAction(6),
                                             MoveToArtifact1
                                     ),
 
@@ -125,7 +136,7 @@ public class CloseAutonomous {
                                             new SequentialAction(
                                                     MoveToShootingPlace,
 
-                                                    robot.getOrientRobotForShootAction()
+                                                    actions.getOrientRobotForShootAction()
                                             ),
                                             robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal())
                                     ),
@@ -143,7 +154,7 @@ public class CloseAutonomous {
                                         MoveToOutOfLine,
                                         robot.getStopShooterAction(),
                                         robot.getStopIntakeAction()
-                                        )
+                                )
                         )
 
                 );
