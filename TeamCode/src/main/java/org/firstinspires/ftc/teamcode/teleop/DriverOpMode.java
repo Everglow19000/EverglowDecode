@@ -16,10 +16,12 @@ import com.seattlesolvers.solverslib.gamepad.GamepadEx;
 import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.seattlesolvers.solverslib.gamepad.ToggleButtonReader;
 
 import org.firstinspires.ftc.teamcode.MecanumDrive;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.everglow_library.Utils;
+import org.firstinspires.ftc.teamcode.subsystems.FeedingMechanism;
 import org.firstinspires.ftc.teamcode.subsystems.Motif;
 
 import Ori.Coval.Logging.Logger.KoalaLog;
@@ -75,7 +77,9 @@ public class DriverOpMode extends LinearOpMode {
         if (isBlueObject != null) {
             isBlue = (boolean) isBlueObject;
         }
-        robot = new Robot(hardwareMap, isBlue, false, Motif.NONE);
+        robot = new Robot(hardwareMap, isBlue, false, Robot.currentMotif);
+
+        robot.camera.isUpdatePoseOnUpdate = true;
 
         boolean driveAvailable = true;
         boolean spindexerAvailable = true;
@@ -84,7 +88,7 @@ public class DriverOpMode extends LinearOpMode {
         double[] position = new double[3];
         Motif[] motifs = new Motif[1];
 
-        motifs[0] = Motif.NONE;
+        motifs[0] = Robot.currentMotif;
 
         GamepadEx gamepad = new GamepadEx(gamepad1);
 
@@ -137,12 +141,13 @@ public class DriverOpMode extends LinearOpMode {
                 shouldSpinUpShooter = true;
             }
 
-            if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.CROSS)) {
+            if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)) {
                 driveAvailable = false;
                 spindexerAvailable = false;
                 shooterAvailable = false;
                 currentRumble = endShootActionRumble;
                 currentAction = new SequentialAction(
+                        robot.drive.getStopMovingAction(),
                         new RaceAction(
                                 robot.getOrientRobotForShootAction(),
                                 robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal())
@@ -153,6 +158,20 @@ public class DriverOpMode extends LinearOpMode {
                                 robot.getLaunchAllArtifactsAction()
                         ),
                         robot.drive.getStopMovingAction(),
+                        robot.getStopShooterAction()
+                );
+            }
+            else if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.CROSS)) {
+                driveAvailable = false;
+                spindexerAvailable = false;
+                shooterAvailable = false;
+                currentRumble = endShootActionRumble;
+                currentAction = new SequentialAction(
+                        robot.drive.getStopMovingAction(),
+                        new RaceAction(
+                                robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
+                                robot.getLaunchAllArtifactsAction()
+                        ),
                         robot.getStopShooterAction()
                 );
             }
@@ -211,6 +230,7 @@ public class DriverOpMode extends LinearOpMode {
                 shooterAvailable = true;
                 gamepad.gamepad.runRumbleEffect(endGenericActionRumble);
                 currentRumble = null;
+                robot.feedingMechanism.setFeedingServoPosition(FeedingMechanism.FeedingServoPosition.DOWN);
                 robot.stopShooterMotor();
             }
             if (currentAction != null && !currentAction.run(new TelemetryPacket())) {

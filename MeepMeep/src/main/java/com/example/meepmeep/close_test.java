@@ -24,7 +24,7 @@ public class close_test {
             .build();
 
 
-    myBot.runAction(myBot.getDrive().actionBuilder(new Pose2d(-36, -18 * isBlueValue, Math.toRadians(-135 * isBlueValue)))
+    myBot.runAction(myBot.getDrive().actionBuilder(new Pose2d(-48, -48 * isBlueValue, Math.toRadians(90 * isBlueValue)))
             .setTangent(0)
             .splineToSplineHeading(new Pose2d(-12, -30 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90 * isBlueValue))
             .splineTo(new Vector2d(-12, -55 * isBlueValue), Math.toRadians(-90 * isBlueValue), new TranslationalVelConstraint(10))

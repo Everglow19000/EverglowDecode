@@ -2,6 +2,9 @@ package org.firstinspires.ftc.teamcode.autonomous;
 
 import static com.qualcomm.robotcore.eventloop.opmode.OpMode.blackboard;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.canvas.Canvas;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.ParallelAction;
@@ -18,6 +21,7 @@ import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.teamcode.MecanumDrive;
 import org.firstinspires.ftc.teamcode.Robot;
@@ -26,6 +30,8 @@ import org.firstinspires.ftc.teamcode.subsystems.FeedingMechanism;
 import org.firstinspires.ftc.teamcode.subsystems.Motif;
 
 import java.util.Arrays;
+
+import Ori.Coval.Logging.Logger.KoalaLog;
 
 public class CloseAutonomous {
     LinearOpMode opMode;
@@ -39,6 +45,7 @@ public class CloseAutonomous {
         blackboard.put("isBlue", isBlue);
         int isBlueValue = isBlue ? 1 : -1;
         Robot robot = new Robot(opMode.hardwareMap, isBlue, true, Motif.NONE);
+        opMode.telemetry = new MultipleTelemetry(opMode.telemetry, FtcDashboard.getInstance().getTelemetry());
 
         while (opMode.opModeInInit() && !opMode.isStopRequested()) {
             robot.camera.start();
@@ -47,18 +54,23 @@ public class CloseAutonomous {
             opMode.telemetry.update();
         }
 
+        robot.drive.localizer.setPose(new Pose2d(-36, -52 * isBlueValue, Math.toRadians(90 * isBlueValue)));
+
         opMode.waitForStart();
+
+        KoalaLog.setup(opMode.hardwareMap);
 
         double[] position = new double[3];
 
         Actions.runBlocking(
                 new ParallelAction(
-                        robot.getLocalizeWithApriltagAction(position, false),
+                        robot.getLocalizeWithApriltagAction(position, true),
                         robot.getScanArtifactColorsAction()
                 )
         );
 
         Pose2d startingPlace = new Pose2d(position[0], position[1], position[2]);
+//        Pose2d startingPlace = robot.drive.localizer.getPose();
 
         opMode.telemetry.addData("stored", robot.getFeedingMechanismContents());
 
@@ -80,8 +92,8 @@ public class CloseAutonomous {
 
         TrajectoryActionBuilder b_MoveToArtifact1 = b_TurnToGoal.endTrajectory().fresh()
                 .setTangent(0)
-                .splineToSplineHeading(new Pose2d(-12, -30 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90 * isBlueValue))
-                .splineTo(new Vector2d(-10, -58 * isBlueValue), Math.toRadians(-90 * isBlueValue), new TranslationalVelConstraint(10));
+                .splineToSplineHeading(new Pose2d(-16, -30 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90 * isBlueValue))
+                .splineTo(new Vector2d(-16, -50 * isBlueValue), Math.toRadians(-90 * isBlueValue), new TranslationalVelConstraint(10));
 
         TrajectoryActionBuilder b_MoveToShootingPlace = b_MoveToArtifact1.endTrajectory().fresh()
                 .setTangent(Math.toRadians(90 * isBlueValue))
@@ -128,7 +140,7 @@ public class CloseAutonomous {
                                     robot.getStopShooterAction(),
 
                                     new ParallelAction(
-                                            robot.getIntakeThreeAction(6),
+                                            robot.getIntakeThreeAction(4),
                                             MoveToArtifact1
                                     ),
 
@@ -152,6 +164,7 @@ public class CloseAutonomous {
                         ),
                                 new ParallelAction(
                                         MoveToOutOfLine,
+                                        robot.getMoveFeedingServoAction(FeedingMechanism.FeedingServoPosition.DOWN),
                                         robot.getStopShooterAction(),
                                         robot.getStopIntakeAction()
                                 )

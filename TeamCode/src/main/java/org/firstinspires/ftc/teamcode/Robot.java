@@ -40,15 +40,21 @@ public class Robot extends RobotBase {
                 shootingSequence = feedingMechanism.getShootingSequence();
                 if (shootingSequence.length != 0) {
                     action = new SequentialAction(
-                            shooter.getWaitUntilShooterSpinupAction(),
                             feedingMechanism.getMoveSpindexerAction(shootingSequence[0]),
+                            new ParallelAction(
+                                    shooter.getWaitUntilShooterSpinupAction(),
+                                    new SleepAction(Robot.timeBetweenShootsMS/1000)
+                            ),
                             feedingMechanism.getFeedSingleArtifactAction(shootingSequence[0])
                     );
                     for (int i = 1; i < shootingSequence.length; i++) {
                         action = new SequentialAction(
                                 action,
-                                shooter.getWaitUntilShooterSpinupAction(),
                                 feedingMechanism.getMoveSpindexerAction(shootingSequence[i]),
+                                new ParallelAction(
+                                        shooter.getWaitUntilShooterSpinupAction(),
+                                        new SleepAction(Robot.timeBetweenShootsMS/1000)
+                                ),
                                 feedingMechanism.getFeedSingleArtifactAction(shootingSequence[i])
                         );
                     }
@@ -63,9 +69,10 @@ public class Robot extends RobotBase {
     }
     private static double CAMERA_RELIABALITY_DISTANCE = 100;
     public static Vector2d goalPoseDistanceStatic = new Vector2d(-58.374, -55.641);
-    public static Vector2d goalPoseOrientationStatic = new Vector2d(-62, -60.2);
+    public static Vector2d goalPoseOrientationStatic = new Vector2d(-56, -58);
     public static Vector2d goalEdge1Static = new Vector2d(-52, -61);
     public static Vector2d goalEdge2Static = new Vector2d(-66, -51);
+    public static double timeBetweenShootsMS = 200;
     public Vector2d goalPoseDistance;
     public Vector2d goalPoseOrientation;
     public Vector2d goalEdge1;
@@ -143,7 +150,7 @@ public class Robot extends RobotBase {
         if (calculateDistanceFromGoal() >= 40) {
             return Utils.getOptimalAngleToShoot(goalPoseOrientation, pose);
         }
-        return Utils.getOptimalAngleToShoot(goalPoseDistance, pose);
+        return Utils.getOptimalAngleToShoot(goalPoseOrientation, pose);
     }
 
     public Rotation2d getOptimalAngleToShoot() {
@@ -228,6 +235,10 @@ public class Robot extends RobotBase {
                         )
                 )
         );
+    }
+
+    public Action getMoveFeedingServoAction(FeedingMechanism.FeedingServoPosition position) {
+        return feedingMechanism.getMoveFeedingServoAction(position);
     }
 
     public String getFeedingMechanismContents() {

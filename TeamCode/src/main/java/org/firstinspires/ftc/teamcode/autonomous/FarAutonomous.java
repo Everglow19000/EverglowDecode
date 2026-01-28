@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode.autonomous;
 
 import static com.qualcomm.robotcore.eventloop.opmode.OpMode.blackboard;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.ParallelAction;
@@ -31,6 +33,7 @@ public class FarAutonomous {
         int isBlueValue = isBlue ? 1 : -1;
 
         Robot robot = new Robot(opMode.hardwareMap, isBlue, true, Motif.NONE);
+        opMode.telemetry = new MultipleTelemetry(opMode.telemetry, FtcDashboard.getInstance().getTelemetry());
 
 
         while (opMode.opModeInInit() && !opMode.isStopRequested()) {
@@ -40,6 +43,7 @@ public class FarAutonomous {
             opMode.telemetry.update();
         }
 
+        robot.drive.localizer.setPose(new Pose2d(0, 0, Math.toRadians(180)));
 
         opMode.waitForStart();
 
@@ -55,23 +59,18 @@ public class FarAutonomous {
                                 robot.getMotifFromObeliskAction(motifWrapper),
                                 robot.getScanArtifactColorsAction()
                         ),
-                        robot.getLocalizeWithApriltagAction(location, false)
+                        robot.getLocalizeWithApriltagAction(location, true)
                 )
         );
 
-        if (location[0] == 0 && location[1] == 0) {
-            startingPlace = new Pose2d(61.1, -20.7 * isBlueValue, Math.toRadians(180));
-        }
-        else {
-            startingPlace = new Pose2d(location[0], location[1], location[2]);
-        }
+        startingPlace = new Pose2d(location[0], location[1], location[2]);
         opMode.telemetry.addData("stored Artifacts", robot.getFeedingMechanismContents());
 
         robot.setMotif(motifWrapper[0]);
         MecanumDrive drive = robot.drive;
         drive.localizer.setPose(startingPlace);
 
-//
+
         TrajectoryActionBuilder b_MoveToArtifact1 = drive.actionBuilder(startingPlace)
                 .splineTo(new Vector2d(36, -40 * isBlueValue), Math.toRadians(-90 * isBlueValue));
 

@@ -22,14 +22,14 @@ import org.firstinspires.ftc.teamcode.everglow_library.Utils;
 import java.util.Arrays;
 
 public class FeedingMechanism implements Subsystem {
-    public static double artifactDistanceFromSensor1 = 35.5;
-    public static double artifactDistanceFromSensor2 = 45.5;
+    public static double artifactDistanceFromSensor1 = 34.5;
+    public static double artifactDistanceFromSensor2 = 44.5;
     public static double analogInputMin = 0.05484;
     public static double analogInputMax = 0.94939;
     public static double spindexerEncoderTolerance = 0.005;
     public enum FeedingServoPosition {
-        DOWN(0.5),
-        UP(0.74);
+        DOWN(0.6),
+        UP(0.84);
 
         public double position;
 
@@ -208,6 +208,19 @@ public class FeedingMechanism implements Subsystem {
                 setSpindexerPosition(targetPosition);
             }
             return !isSpindexerInPosition();
+        }
+    }
+
+    public class MoveFeedingServoAction implements Action {
+        private FeedingServoPosition targetPosition;
+        private MoveFeedingServoAction(FeedingServoPosition targetPosition) {
+            this.targetPosition = targetPosition;
+        }
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            setFeedingServoPosition(targetPosition);
+            return false;
         }
     }
 
@@ -613,6 +626,10 @@ public class FeedingMechanism implements Subsystem {
 
     public ScanCurrentArtifactAction getScanCurrentArtifactAction() {
         return new ScanCurrentArtifactAction();
+    }
+
+    public MoveFeedingServoAction getMoveFeedingServoAction(FeedingServoPosition position) {
+        return new MoveFeedingServoAction(position);
     }
 
     public Action getScanArtifactColorsAction() {

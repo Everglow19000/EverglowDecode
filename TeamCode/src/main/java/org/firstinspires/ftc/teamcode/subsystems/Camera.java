@@ -25,6 +25,8 @@ import org.firstinspires.ftc.teamcode.everglow_library.Subsystem;
 
 import java.util.List;
 
+import Ori.Coval.Logging.Logger.KoalaLog;
+
 public class Camera implements Subsystem{
     public class DetermineMotifAction implements Action {
         private boolean hasStarted = false;
@@ -70,6 +72,8 @@ public class Camera implements Subsystem{
         private int index = 0;
         private boolean hasStarted = false;
         private boolean isMT2;
+        private final int maxInvalidResultsCount = 50;
+        private int currInvalidResultsCount = 0;
 
         // location is a list of size 3 [x,y,heading]
         public FindLocationAction(double[] location, int amount, boolean isMT2) {
@@ -93,13 +97,23 @@ public class Camera implements Subsystem{
             }
             LLResult result = limelight3A.getLatestResult();
             if (result.isValid()) {
+                currInvalidResultsCount = 0;
                 if (isMT2) {
                     locations[index] = result.getBotpose_MT2();
                 }
                 else {
                     locations[index] = result.getBotpose();
                 }
+                KoalaLog.log("apriltag index", index, false);
                 index++;
+            }
+            else {
+                currInvalidResultsCount++;
+                if (currInvalidResultsCount >= maxInvalidResultsCount) {
+                    location[0] = localizer.getPose().position.x;
+                    location[1] = localizer.getPose().position.y;
+                    location[2] = localizer.getPose().heading.toDouble();
+                }
             }
 
             if (index >= locations.length) {
