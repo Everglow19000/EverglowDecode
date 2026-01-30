@@ -1,12 +1,15 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
+import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
@@ -16,12 +19,17 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.everglow_library.Subsystem;
 import org.firstinspires.ftc.teamcode.everglow_library.Utils;
 
+import java.util.Arrays;
+
 public class FeedingMechanism implements Subsystem {
-    public static double artifactDistanceFromSensor = 35;
-    public static double restOfRobotDistanceFromSensor = 42;
+    public static double artifactDistanceFromSensor1 = 34.5;
+    public static double artifactDistanceFromSensor2 = 44.5;
+    public static double analogInputMin = 0.05484;
+    public static double analogInputMax = 0.94939;
+    public static double spindexerEncoderTolerance = 0.005;
     public enum FeedingServoPosition {
-        DOWN(0.5),
-        UP(0.74);
+        DOWN(0.6),
+        UP(0.84);
 
         public double position;
 
@@ -41,8 +49,8 @@ public class FeedingMechanism implements Subsystem {
 
     public enum SpindexerPosition {
         SHOOT_INDEX_0(0.75),
-        SHOOT_INDEX_1(0.37),
-        SHOOT_INDEX_2(0),
+        SHOOT_INDEX_1(0),
+        SHOOT_INDEX_2(0.37),
         INTAKE_INDEX_0(0.19),
         INTAKE_INDEX_1(0.56),
         INTAKE_INDEX_2(0.92);
@@ -158,23 +166,28 @@ public class FeedingMechanism implements Subsystem {
 
 
     public class ScanCurrentArtifactAction implements Action {
-        private double noneSeenCount = 0;
-        private final double noneSeenThreshold = 30;
+        private int noneSeenCount = 0;
+        private int noneSeenThreshold;
+        private ScanCurrentArtifactAction(int noneSeenThreshold) {
+            this.noneSeenThreshold = noneSeenThreshold;
+        }
         private ScanCurrentArtifactAction() {
-
+            this(30);
         }
 
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
             if (isThereArtifactInCurrentIntake(true)) {
-                storedArtifacts[currentSpindexerPosition.getSelectedArrayIndex()] = lastArtifactColor;
+                storedArtifacts[targetSpindexerPosition.getSelectedArrayIndex()] = lastArtifactColor;
                 return false;
             }
             else if (noneSeenCount < noneSeenThreshold) {
-                noneSeenCount++;
+                if (noneSeenThreshold >= 0) {
+                    noneSeenCount++;
+                }
             }
             else {
-                storedArtifacts[currentSpindexerPosition.getSelectedArrayIndex()] = null;
+                storedArtifacts[targetSpindexerPosition.getSelectedArrayIndex()] = null;
                 return false;
             }
             return true;
@@ -182,71 +195,46 @@ public class FeedingMechanism implements Subsystem {
     }
 
     public class MoveSpindexerAction implements Action {
-        private double currentPosition;
         private SpindexerPosition targetPosition;
-        private double stepSize = 0.003;
         private boolean hasStarted = false;
-        private boolean isAddPosition;
-        private MoveSpindexerAction(SpindexerPosition targetPosition, double stepSize) {
-            this.stepSize = stepSize;
-            this.targetPosition = targetPosition;
-        }
         private MoveSpindexerAction(SpindexerPosition targetPosition) {
-            this(targetPosition, 0.003);
+            this.targetPosition = targetPosition;
         }
 
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
             if (!hasStarted) {
                 hasStarted = true;
-                currentPosition = currentSpindexerPosition.position;
-                isAddPosition = currentPosition < targetPosition.position;
+                setSpindexerPosition(targetPosition);
             }
-
-//            telemetryPacket.put("curr position", currentPosition);
-//            telemetryPacket.put("isAddPosition", isAddPosition);
-//            telemetryPacket.put("startingSpindexerPosition", currentSpindexerPosition);
-//            telemetryPacket.put("startingSpindexerPosition value", currentSpindexerPosition.position);
-            if (isAddPosition) {
-                if (currentPosition + stepSize >= targetPosition.position) {
-                    currentPosition = targetPosition.position;
-                    setSpindexerPosition(targetPosition);
-                    return false;
-                }
-                else {
-                    currentPosition += stepSize;
-                    spindexerServo.setPosition(currentPosition);
-                    return true;
-                }
-            }
-            else {
-                if (currentPosition - stepSize <= targetPosition.position) {
-                    currentPosition = targetPosition.position;
-                    setSpindexerPosition(targetPosition);
-                    return false;
-                }
-                else {
-                    currentPosition -= stepSize;
-                    spindexerServo.setPosition(currentPosition);
-                    return true;
-                }
-            }
+            return !isSpindexerInPosition();
         }
     }
 
-//    public class SetIntakeAction implements Action {
-//
-//    }
+    public class MoveFeedingServoAction implements Action {
+        private FeedingServoPosition targetPosition;
+        private MoveFeedingServoAction(FeedingServoPosition targetPosition) {
+            this.targetPosition = targetPosition;
+        }
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            setFeedingServoPosition(targetPosition);
+            return false;
+        }
+    }
 
     // servo that pushes artifacts into the shooter
     public Servo feedingServo;
     // servo that rotates the artifact in the spindexer
     public Servo spindexerServo;
+    // analog input from the spindexer axon servo
+    public AnalogInput spindexerEncoder;
     RevColorSensorV3 colorSensor1;
     RevColorSensorV3 colorSensor2;
     //swyft sense magnetic limit switch, true if feedingServo is down
     public DigitalChannel limitSwitch;
-    static SpindexerPosition currentSpindexerPosition;
+    SpindexerPosition targetSpindexerPosition;
     FeedingServoPosition currentFeedingServoPosition;
     Motif motif;
     ArtifactColor[] storedArtifacts = new ArtifactColor[3];
@@ -259,17 +247,16 @@ public class FeedingMechanism implements Subsystem {
         this.limitSwitch = hardwareMap.get(DigitalChannel.class, "feedingLimitSwitch");
         this.limitSwitch.setMode(DigitalChannel.Mode.INPUT);
         this.motif = motif;
-        if (currentSpindexerPosition == null) {
-            SpindexerPosition[] values = SpindexerPosition.values();
-            int minIndex = 0;
+        spindexerEncoder = hardwareMap.get(AnalogInput.class, "spindexerInput");
+        SpindexerPosition[] values = SpindexerPosition.values();
+        int minIndex = 0;
 
-            for (int i = 0; i < values.length; i++) {
-                if (Math.abs(spindexerServo.getPosition() - values[i].position) < Math.abs(spindexerServo.getPosition() - values[minIndex].position)) {
-                    minIndex = i;
-                }
+        for (int i = 0; i < values.length; i++) {
+            if (Math.abs(getScaledSpindexerEncoderPosition() - values[i].position) < Math.abs(getScaledSpindexerEncoderPosition() - values[minIndex].position)) {
+                minIndex = i;
             }
-            currentSpindexerPosition = values[minIndex];
         }
+        targetSpindexerPosition = values[minIndex];
     }
 
     public void setMotif(Motif motif) {
@@ -277,6 +264,7 @@ public class FeedingMechanism implements Subsystem {
     }
 
     private final int voidThreshold = 10;
+    // represents how many times we haven't been able to match a color
     private int voidCount = 0;
     //Counts the number of subsequent times an artifact has not been detected
     //Starts one above the threshold. Once an artifact has been seen, is set to zero.
@@ -288,23 +276,10 @@ public class FeedingMechanism implements Subsystem {
     private boolean isIntaking = false;
     private boolean isIntakingLastUpdate = false;
     private boolean readyForNext = true;
-    private int waitUntilNext = 0;
-    private int waitUntilNextThreshold = 30;
     @Override
     public void update(int iterationCount) {
         if (!readyForNext) {
-            if (colorSensor1.getDistance(DistanceUnit.MM) > restOfRobotDistanceFromSensor && colorSensor2.getDistance(DistanceUnit.MM) > restOfRobotDistanceFromSensor) {
-                readyForNext = true;
-            }
-            else {
-                if (colorSensor1.getDistance(DistanceUnit.MM) > restOfRobotDistanceFromSensor || colorSensor2.getDistance(DistanceUnit.MM) > restOfRobotDistanceFromSensor) {
-                    waitUntilNext++;
-                }
-                if (waitUntilNext > waitUntilNextThreshold) {
-                    waitUntilNext = 0;
-                    readyForNext = false;
-                }
-            }
+            readyForNext = isSpindexerInPosition();
         }
         else if (isIntaking && isThereArtifactInCurrentIntake(true)) {
             readyForNext = false;
@@ -322,10 +297,10 @@ public class FeedingMechanism implements Subsystem {
         double sensor2Distance = colorSensor2.getDistance(DistanceUnit.MM);
 
         if (!updateLastColor) {
-            return sensor1Distance <= artifactDistanceFromSensor || sensor2Distance <= artifactDistanceFromSensor;
+            return sensor1Distance <= artifactDistanceFromSensor1 || sensor2Distance <= artifactDistanceFromSensor2;
         }
 
-        if (!(sensor1Distance <= artifactDistanceFromSensor || sensor2Distance <= artifactDistanceFromSensor)) {
+        if (!(sensor1Distance <= artifactDistanceFromSensor1 || sensor2Distance <= artifactDistanceFromSensor2)) {
             lastColor = null;
             lastArtifactColor = null;
             return false;
@@ -337,10 +312,10 @@ public class FeedingMechanism implements Subsystem {
         ArtifactColor color1 = null;
         ArtifactColor color2 = null;
 
-        if (sensor1Distance <= artifactDistanceFromSensor) {
+        if (sensor1Distance <= artifactDistanceFromSensor1) {
             color1 = matchColor(color1Value);
         }
-        if (sensor2Distance <= artifactDistanceFromSensor) {
+        if (sensor2Distance <= artifactDistanceFromSensor2) {
             color2 = matchColor(color2Value);
         }
 
@@ -366,18 +341,21 @@ public class FeedingMechanism implements Subsystem {
                 voidCount++;
             }
         }
-
-        if (color1 != null || color2 != null) {
-            if (voidCount >= voidThreshold) {
-                voidCount = 0;
-                lastColor = color1 != null ? color1Value : color2Value;
-                lastArtifactColor = ArtifactColor.NONE;
-                return true;
-            }
+        else {
+            // if both sensors haven't detected any artifact, reset "no color matches" counter
+            voidCount = 0;
         }
 
-        voidCount = 0;
-        return false;
+        // if both sensors haven't matched any color for voidThreshold iterations or more, mark the color as NONE and move on. otherwise just continue scanning
+        if (voidCount >= voidThreshold) {
+            voidCount = 0;
+            lastColor = color1Value;
+            lastArtifactColor = ArtifactColor.NONE;
+            return true;
+        }
+        else {
+            return false;
+        }
     }
     public boolean isIntaking() {
         return isIntaking;
@@ -423,9 +401,9 @@ public class FeedingMechanism implements Subsystem {
     }
     // returns true if another can be intaked and moves to the next position to intake, false otherwise
     private boolean artifactEntered(ArtifactColor color) {
-        storedArtifacts[currentSpindexerPosition.getSelectedArrayIndex()] = color;
+        storedArtifacts[targetSpindexerPosition.getSelectedArrayIndex()] = color;
 
-        SpindexerPosition nextPosition = currentSpindexerPosition.getNext();
+        SpindexerPosition nextPosition = targetSpindexerPosition.getNext();
 
         for (int i = 0; i < 2; i++) {
             if (storedArtifacts[nextPosition.getSelectedArrayIndex()] != null) {
@@ -439,7 +417,7 @@ public class FeedingMechanism implements Subsystem {
         return false;
     }
     public void setSpindexerPosition(SpindexerPosition position) {
-        currentSpindexerPosition = position;
+        targetSpindexerPosition = position;
         spindexerServo.setPosition(position.position);
     }
     public void setFeedingServoPosition(FeedingServoPosition position) {
@@ -449,6 +427,15 @@ public class FeedingMechanism implements Subsystem {
 
     public FeedingServoPosition getCurrentFeedingServoPosition() {
         return currentFeedingServoPosition;
+    }
+
+    // only this should be used to access the encoder's position, as this matches the encoder's reading to the servo's position (they are same when servo isn't moving)
+    public double getScaledSpindexerEncoderPosition() {
+        return ((spindexerEncoder.getVoltage()/spindexerEncoder.getMaxVoltage()) - analogInputMin)/(analogInputMax - analogInputMin);
+    }
+
+    public boolean isSpindexerInPosition() {
+        return Math.abs(getScaledSpindexerEncoderPosition() - targetSpindexerPosition.position) <= spindexerEncoderTolerance;
     }
 
     private int countArtifactsInSpindexer() {
@@ -464,7 +451,7 @@ public class FeedingMechanism implements Subsystem {
     private int getArtifactColorCount(ArtifactColor color) {
         int sum = 0;
         for (int i = 0; i < storedArtifacts.length; i++) {
-            if (storedArtifacts[i] == color || (storedArtifacts[i] != null && color == ArtifactColor.PURPLE)) {
+            if (storedArtifacts[i] == color || (storedArtifacts[i] == ArtifactColor.NONE && color == ArtifactColor.PURPLE)) {
                 sum++;
             }
         }
@@ -475,7 +462,7 @@ public class FeedingMechanism implements Subsystem {
         int[] positions = new int[getArtifactColorCount(color)];
         int positionsIndex = 0;
         for (int i = 0; i < storedArtifacts.length; i++) {
-            if (storedArtifacts[i] == color || (storedArtifacts[i] != null && color == ArtifactColor.PURPLE)) {
+            if (storedArtifacts[i] == color || (storedArtifacts[i] == ArtifactColor.NONE && color == ArtifactColor.PURPLE)) {
                 positions[positionsIndex] = i;
                 positionsIndex++;
             }
@@ -488,8 +475,8 @@ public class FeedingMechanism implements Subsystem {
 
         if (motif == Motif.NONE) {
             SpindexerPosition currIndexStored;
-            if (currentSpindexerPosition == SpindexerPosition.SHOOT_INDEX_0 || currentSpindexerPosition == SpindexerPosition.SHOOT_INDEX_1 || currentSpindexerPosition == SpindexerPosition.SHOOT_INDEX_2) {
-                currIndexStored = currentSpindexerPosition;
+            if (targetSpindexerPosition == SpindexerPosition.SHOOT_INDEX_0 || targetSpindexerPosition == SpindexerPosition.SHOOT_INDEX_1 || targetSpindexerPosition == SpindexerPosition.SHOOT_INDEX_2) {
+                currIndexStored = targetSpindexerPosition;
             }
             else {
                 currIndexStored = SpindexerPosition.SHOOT_INDEX_0;
@@ -505,6 +492,10 @@ public class FeedingMechanism implements Subsystem {
         else {
             int[] purpleArtifactPositions = getArtifactColorPositions(ArtifactColor.PURPLE);
             int[] greenArtifactPositions = getArtifactColorPositions(ArtifactColor.GREEN);
+            Log.i("FeedingMechanism", "stored: " + getStoredArtifacts());
+            Log.i("FeedingMechanism", "purplePositions: " + Arrays.toString(purpleArtifactPositions));
+            Log.i("FeedingMechanism", "greenPositions: " + Arrays.toString(greenArtifactPositions));
+            Log.i("FeedingMechanism", "motif: " + motif);
             if (motif == Motif.GPP) {
                 int purpleIndex = 0;
                 int greenIndex = 0;
@@ -609,11 +600,12 @@ public class FeedingMechanism implements Subsystem {
             }
         }
 
+        Log.i("FeedingMechanism", "result: " + Arrays.toString(result));
         return result;
     }
 
-    public SpindexerPosition getCurrentSpindexerPosition() {
-        return currentSpindexerPosition;
+    public SpindexerPosition getTargetSpindexerPosition() {
+        return targetSpindexerPosition;
     }
 
     public String getStoredArtifacts() {
@@ -626,6 +618,18 @@ public class FeedingMechanism implements Subsystem {
 
     public MoveSpindexerAction getMoveSpindexerAction(SpindexerPosition position) {
         return new MoveSpindexerAction(position);
+    }
+
+    public ScanCurrentArtifactAction getScanCurrentArtifactAction(int noneSeenThreshold) {
+        return new ScanCurrentArtifactAction(noneSeenThreshold);
+    }
+
+    public ScanCurrentArtifactAction getScanCurrentArtifactAction() {
+        return new ScanCurrentArtifactAction();
+    }
+
+    public MoveFeedingServoAction getMoveFeedingServoAction(FeedingServoPosition position) {
+        return new MoveFeedingServoAction(position);
     }
 
     public Action getScanArtifactColorsAction() {
@@ -645,7 +649,7 @@ public class FeedingMechanism implements Subsystem {
     public static int countArtifactsInSpindexer(ArtifactColor[] storedArtifacts) {
         int sum = 0;
         for (int i = 0; i < storedArtifacts.length; i++) {
-            if (storedArtifacts[i] != ArtifactColor.NONE) {
+            if (storedArtifacts[i] != null) {
                 sum++;
             }
         }
@@ -656,7 +660,7 @@ public class FeedingMechanism implements Subsystem {
     public static int getArtifactColorCount(ArtifactColor[] storedArtifacts, ArtifactColor color) {
         int sum = 0;
         for (int i = 0; i < storedArtifacts.length; i++) {
-            if (storedArtifacts[i] == color) {
+            if (storedArtifacts[i] == color || (storedArtifacts[i] == ArtifactColor.NONE && color == ArtifactColor.PURPLE)) {
                 sum++;
             }
         }
@@ -668,7 +672,7 @@ public class FeedingMechanism implements Subsystem {
         int[] positions = new int[getArtifactColorCount(storedArtifacts, color)];
         int positionsIndex = 0;
         for (int i = 0; i < storedArtifacts.length; i++) {
-            if (storedArtifacts[i] == color) {
+            if (storedArtifacts[i] == color || (storedArtifacts[i] == ArtifactColor.NONE && color == ArtifactColor.PURPLE)) {
                 positions[positionsIndex] = i;
                 positionsIndex++;
             }

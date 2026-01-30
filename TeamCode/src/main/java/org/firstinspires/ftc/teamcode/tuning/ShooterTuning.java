@@ -38,7 +38,7 @@ public class ShooterTuning extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-        robot = new Robot(this.hardwareMap, false);
+        robot = new Robot(this.hardwareMap, true);
 
         double[] position = new double[3];
 
@@ -50,7 +50,7 @@ public class ShooterTuning extends LinearOpMode {
 
         waitForStart();
 
-        Actions.runBlocking(robot.getLocalizeWithApriltagAction(position));
+        Actions.runBlocking(robot.getLocalizeWithApriltagAction(position, false));
 
         robot.drive.localizer.setPose(new Pose2d(position[0], position[1], position[2]));
 
@@ -65,11 +65,11 @@ public class ShooterTuning extends LinearOpMode {
                 robot.stopIntake();
             }
 
+            robot.shooter.setHoodServoAngle(servoAngle);
+            robot.shooter.setFlywheelMotorSpeed(tickPerSecond);
             if (shootingAction == null) {
                 robot.calculateDrivePowers(gamepad);
                 if (gamepad.wasJustPressed(GamepadKeys.Button.CROSS)) {
-                    robot.shooter.setHoodServoAngle(servoAngle);
-                    robot.shooter.setFlywheelMotorSpeed(tickPerSecond);
                     shootingAction = new SequentialAction(
                             robot.getOrientRobotForShootAction(),
                             robot.getLaunchAllArtifactsAction(),

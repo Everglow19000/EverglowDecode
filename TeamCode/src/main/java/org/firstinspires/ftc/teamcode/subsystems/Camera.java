@@ -1,6 +1,9 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import static org.opencv.core.Core.magnitude;
 import static org.opencv.core.Core.mean;
+
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -16,7 +19,13 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.teamcode.Localizer;
 import org.firstinspires.ftc.teamcode.everglow_library.Subsystem;
+
+import java.util.List;
+
+import Ori.Coval.Logging.Logger.KoalaLog;
 
 public class Camera implements Subsystem{
     public class DetermineMotifAction implements Action {
@@ -49,7 +58,7 @@ public class Camera implements Subsystem{
                 }
             }
 
-            if ((System.currentTimeMillis() - startTime) > timeUntilBail && motifWrapper[0] == null) {
+            if ((System.currentTimeMillis() - startTime) > timeUntilBail && !isFinished) {
                 motifWrapper[0] = Motif.NONE;
             }
 
@@ -62,9 +71,13 @@ public class Camera implements Subsystem{
         private Pose3D[] locations;
         private int index = 0;
         private boolean hasStarted = false;
+        private boolean isMT2;
+        private final int maxInvalidResultsCount = 50;
+        private int currInvalidResultsCount = 0;
 
         // location is a list of size 3 [x,y,heading]
-        public FindLocationAction(double[] location, int amount) {
+        public FindLocationAction(double[] location, int amount, boolean isMT2) {
+            this.isMT2 = isMT2;
             locations = new Pose3D[amount];
             this.location = location;
             location[0] = 0.0;
@@ -79,57 +92,133 @@ public class Camera implements Subsystem{
 
                 limelight3A.pipelineSwitch(1);
             }
+            if (isMT2) {
+                limelight3A.updateRobotOrientation(Math.toDegrees(localizer.getPose().heading.toDouble()));
+            }
             LLResult result = limelight3A.getLatestResult();
             if (result.isValid()) {
-                Pose3D currPose = null;
-
-                for (int i = 0; i < result.getFiducialResults().size(); i++) {
-                    currPose = result.getFiducialResults().get(i).getRobotPoseFieldSpace();
+                currInvalidResultsCount = 0;
+                if (isMT2) {
+                    locations[index] = result.getBotpose_MT2();
                 }
-
-                if (currPose != null) {
-                    locations[index] = currPose;
+                else {
+                    locations[index] = result.getBotpose();
                 }
+                KoalaLog.log("apriltag index", index, false);
                 index++;
+            }
+            else {
+                currInvalidResultsCount++;
+                if (currInvalidResultsCount >= maxInvalidResultsCount) {
+                    location[0] = localizer.getPose().position.x;
+                    location[1] = localizer.getPose().position.y;
+                    location[2] = localizer.getPose().heading.toDouble();
+                }
             }
 
             if (index >= locations.length) {
                 for (Pose3D pose3D : locations) {
                     location[0] += pose3D.getPosition().toUnit(DistanceUnit.INCH).x / locations.length;
                     location[1] += pose3D.getPosition().toUnit(DistanceUnit.INCH).y / locations.length;
+                    if (!isMT2) {
+                        location[2] += pose3D.getOrientation().getYaw(AngleUnit.RADIANS) / locations.length;
+                    }
                 }
-                location[2] += locations[locations.length-1].getOrientation().getYaw(AngleUnit.RADIANS);
+                if (isMT2) {
+                    location[2] += localizer.getPose().heading.toDouble();
+                }
+//                else {
+//                    location[2] /= locations.length;
+//                }
                 return false;
             }
             return true;
         }
     }
 
-    private Limelight3A limelight3A;
+    public Limelight3A limelight3A;
+    private Localizer localizer;
 
-    public Camera(HardwareMap hardwareMap) {
+    public boolean isUpdatePoseOnUpdate = true;
+
+    public Camera(HardwareMap hardwareMap, Localizer localizer) {
         limelight3A = hardwareMap.get(Limelight3A.class, "limelight");
+        this.localizer = localizer;
     }
 
     public void start() {
+        limelight3A.setPollRateHz(100);
         limelight3A.start();
     }
 
     public void setPipeline(int pipeline) {
         limelight3A.pipelineSwitch(pipeline);
     }
+    // returns -1 if result is invalid
+    public double getDistanceFromAprilTag(boolean isBlue) {
+        LLResult result = limelight3A.getLatestResult();
+        if (result.isValid()) {
+            if (result.getPipelineIndex() != 1) {
+                limelight3A.pipelineSwitch(1);
+            }
+            else {
+                int wantedTagID = isBlue ? 20 : 24;
 
+                List<LLResultTypes.FiducialResult> fiducialResults = result.getFiducialResults();
+                Pose3D pose = null;
+
+                for (int i = 0; i < fiducialResults.size(); i++) {
+                    if (fiducialResults.get(i).getFiducialId() == wantedTagID) {
+                        pose = fiducialResults.get(i).getRobotPoseTargetSpace();
+                    }
+                }
+
+                if (pose == null) {
+                    return -1;
+                }
+
+                return Math.sqrt(
+                        0
+//                                + Math.pow(pose.getPosition().toUnit(DistanceUnit.INCH).x, 2)
+//                            + Math.pow(pose.getPosition().toUnit(DistanceUnit.INCH).y, 2)
+                                + Math.pow(pose.getPosition().toUnit(DistanceUnit.INCH).z, 2)
+                );
+            }
+        }
+        return -1;
+    }
+
+    // timeUntilBail is in MS
+    public DetermineMotifAction getDetermineMotifAction(Motif[] motifWrapper, double timeUntilBail) {
+        return new DetermineMotifAction(timeUntilBail, motifWrapper);
+    }
     public DetermineMotifAction getDetermineMotifAction(Motif[] motifWrapper) {
-        return new DetermineMotifAction(500.0, motifWrapper);
+        return getDetermineMotifAction(motifWrapper, 500);
     }
 
     public FindLocationAction getFindLocationAction(double[] location, int amount) {
-        return new FindLocationAction(location, amount);
+        return new FindLocationAction(location, amount, true);
+    }
+
+    public FindLocationAction getFindLocationAction(double[] location, int amount, boolean isMT2) {
+        return new FindLocationAction(location, amount, isMT2);
     }
 
     @Override
     public void update(int iterationCount) {
+        limelight3A.updateRobotOrientation(Math.toDegrees(localizer.getPose().heading.toDouble()));
+        LLResult result = limelight3A.getLatestResult();
+        if (result.isValid()) {
+            if (result.getPipelineIndex() != 1) {
+                limelight3A.pipelineSwitch(1);
+            }
+            else if (isUpdatePoseOnUpdate) {
+                double x = result.getBotpose().getPosition().toUnit(DistanceUnit.INCH).x;
+                double y = result.getBotpose().getPosition().toUnit(DistanceUnit.INCH).y;
 
+                localizer.setPose(new Pose2d(x, y, result.getBotpose().getOrientation().getYaw(AngleUnit.RADIANS)));
+            }
+        }
     }
 
     @Override

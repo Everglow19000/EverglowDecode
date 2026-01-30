@@ -2,6 +2,9 @@ package org.firstinspires.ftc.teamcode.autonomous;
 
 import static com.qualcomm.robotcore.eventloop.opmode.OpMode.blackboard;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.canvas.Canvas;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.ParallelAction;
@@ -9,11 +12,16 @@ import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.RaceAction;
 import com.acmerobotics.roadrunner.SequentialAction;
+import com.acmerobotics.roadrunner.SleepAction;
 import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
+import com.acmerobotics.roadrunner.TranslationalVelConstraint;
 import com.acmerobotics.roadrunner.Vector2d;
+import com.acmerobotics.roadrunner.VelConstraint;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.teamcode.MecanumDrive;
 import org.firstinspires.ftc.teamcode.Robot;
@@ -22,6 +30,8 @@ import org.firstinspires.ftc.teamcode.subsystems.FeedingMechanism;
 import org.firstinspires.ftc.teamcode.subsystems.Motif;
 
 import java.util.Arrays;
+
+import Ori.Coval.Logging.Logger.KoalaLog;
 
 public class CloseAutonomous {
     LinearOpMode opMode;
@@ -35,6 +45,7 @@ public class CloseAutonomous {
         blackboard.put("isBlue", isBlue);
         int isBlueValue = isBlue ? 1 : -1;
         Robot robot = new Robot(opMode.hardwareMap, isBlue, true, Motif.NONE);
+        opMode.telemetry = new MultipleTelemetry(opMode.telemetry, FtcDashboard.getInstance().getTelemetry());
 
         while (opMode.opModeInInit() && !opMode.isStopRequested()) {
             robot.camera.start();
@@ -43,124 +54,124 @@ public class CloseAutonomous {
             opMode.telemetry.update();
         }
 
+        robot.drive.localizer.setPose(new Pose2d(-36, -52 * isBlueValue, Math.toRadians(90 * isBlueValue)));
+
         opMode.waitForStart();
+
+        KoalaLog.setup(opMode.hardwareMap);
 
         double[] position = new double[3];
 
         Actions.runBlocking(
-                new SequentialAction(
-                        robot.getLocalizeWithApriltagAction(position),
+                new ParallelAction(
+//                        robot.getLocalizeWithApriltagAction(position, true),
                         robot.getScanArtifactColorsAction()
                 )
         );
 
-        opMode.telemetry.addData("stored", robot.getFeedingMechanismContents());
-        opMode.telemetry.update();
+//        Pose2d startingPlace = new Pose2d(position[0], position[1], position[2]);
+        Pose2d startingPlace = robot.drive.localizer.getPose();
 
-        Pose2d startingPlace = new Pose2d(position[0], position[1], position[2]);
+        opMode.telemetry.addData("stored", robot.getFeedingMechanismContents());
+
+        opMode.telemetry.addData("position", startingPlace.position);
+        opMode.telemetry.addData("heading", startingPlace.heading.toDouble());
+        opMode.telemetry.update();
 
         robot.drive.localizer.setPose(startingPlace);
         MecanumDrive drive = robot.drive;
 
+        Vector2d obeliskScanPosition = new Vector2d(-36, -18 * isBlueValue);
+
         TrajectoryActionBuilder b_MoveToScanObelisk = drive.actionBuilder(startingPlace)
                 .setTangent(startingPlace.heading)
-                .splineToSplineHeading(new Pose2d(-36, -18 * isBlueValue, Math.toRadians(135 * isBlueValue)), (Math.PI/2.0) * isBlueValue);
+                .splineToSplineHeading(new Pose2d(obeliskScanPosition, Math.toRadians(140 * isBlueValue)), Math.toRadians(180));
 
-        TrajectoryActionBuilder b_MoveToArtifact1 = b_MoveToScanObelisk.endTrajectory().fresh()
-                .setTangent(Math.toRadians(45 * isBlueValue))
-                .splineToSplineHeading(new Pose2d(-12, -30 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90))
-                .splineTo(new Vector2d(-12, -40 * isBlueValue), Math.toRadians(-90 * isBlueValue));
+        TrajectoryActionBuilder b_TurnToGoal = b_MoveToScanObelisk.endTrajectory().fresh()
+                .turnTo(robot.getOptimalAngleToShoot(obeliskScanPosition));
+
+        TrajectoryActionBuilder b_MoveToArtifact1 = b_TurnToGoal.endTrajectory().fresh()
+                .setTangent(0)
+                .splineToSplineHeading(new Pose2d(-10, -30 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90 * isBlueValue))
+                .splineTo(new Vector2d(-10, -50 * isBlueValue), Math.toRadians(-90 * isBlueValue), new TranslationalVelConstraint(10));
 
         TrajectoryActionBuilder b_MoveToShootingPlace = b_MoveToArtifact1.endTrajectory().fresh()
-                .splineTo(new Vector2d(-30, -28 * isBlueValue), Math.toRadians(225 * isBlueValue));
+                .setTangent(Math.toRadians(90 * isBlueValue))
+                .splineToSplineHeading(new Pose2d(-30, -28 * isBlueValue, Math.toRadians(-135*isBlueValue)), Math.toRadians(180));
 
-        TrajectoryActionBuilder b_MoveToOutOfLine = b_MoveToScanObelisk.endTrajectory().fresh()
-                .strafeTo(new Vector2d(-60, -12 * isBlueValue));
+        TrajectoryActionBuilder b_MoveToOutOfLine = b_MoveToShootingPlace.endTrajectory().fresh()
+                .setTangent(0)
+                .splineToSplineHeading(new Pose2d(0, -42 * isBlueValue, Math.toRadians(90 * isBlueValue)), -(Math.PI/2.0) * isBlueValue);
 
 
         Action MoveToScanObelisk = b_MoveToScanObelisk.build();
+        Action TurnToGoal = b_TurnToGoal.build();
         Action MoveToArtifact1 = b_MoveToArtifact1.build();
         Action MoveToShootingPlace = b_MoveToShootingPlace.build();
         Action MoveToOutOfLine = b_MoveToOutOfLine.build();
 
         Motif[] motifHolder = new Motif[1];
 
+        AutonomousActions actions = new AutonomousActions(robot);
+
+
         Actions.runBlocking(
                 new SequentialAction(
-                        MoveToScanObelisk,
-                        robot.getMotifFromObeliskAction(motifHolder)
-                )
-        );
+                        new RaceAction(
+                            new SequentialAction(
+                                    new RaceAction(
+                                            new SequentialAction(
+                                                    new ParallelAction(
+                                                            MoveToScanObelisk,
+                                                            robot.getMotifFromObeliskAction(motifHolder, 4000)
+                                                    ),
+                                                    actions.getUpdateMotifAction(motifHolder),
+                                                    TurnToGoal
+                                            ),
+                                            robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal())
+                                    ),
 
-        opMode.telemetry.addData("motif", motifHolder[0]);
+                                    new RaceAction(
+                                            robot.drive.getHoldHeadingAction(robot),
+                                            robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
+                                            robot.getLaunchAllArtifactsAction()
+                                    ),
 
-        robot.setMotif(motifHolder[0]);
+                                    robot.getStopShooterAction(),
 
-        Action currentAction = null;
+                                    new ParallelAction(
+                                            robot.getIntakeThreeAction(4),
+                                            MoveToArtifact1
+                                    ),
 
-        boolean actionRunResult = false;
-        int actionToProcess = 0;
-        int iterationCount = 0;
-        while (opMode.opModeIsActive()) {
-            robot.update();
-            iterationCount++;
-            if (!actionRunResult) {
-                if (actionToProcess == 0) {
-                    currentAction = new SequentialAction(
-                            robot.getOrientRobotForShootAction(),
+                                    new RaceAction(
+                                            new SequentialAction(
+                                                    MoveToShootingPlace,
 
-                            new RaceAction(
-                                    robot.drive.getHoldHeadingAction(robot),
-                                    robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
-                                    robot.getLaunchAllArtifactsAction()
+                                                    actions.getOrientRobotForShootAction()
+                                            ),
+                                            robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal())
+                                    ),
+
+
+                                    new RaceAction(
+                                        robot.drive.getHoldHeadingAction(robot),
+                                        robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
+                                        robot.getLaunchAllArtifactsAction()
+                                    )
                             ),
+                            new SleepAction(26.5-opMode.getRuntime())
+                        ),
+                                new ParallelAction(
+                                        MoveToOutOfLine,
+                                        robot.getMoveFeedingServoAction(FeedingMechanism.FeedingServoPosition.DOWN),
+                                        robot.getStopShooterAction(),
+                                        robot.getStopIntakeAction()
+                                )
+                        )
 
-                            robot.drive.getStopMovingAction(),
-                            robot.getStopShooterAction()
-
-//                            robot.getStartIntakeAction(),
-//                            MoveToArtifact1,
-//                            robot.getStopIntakeAction(),
-//
-//                            MoveToShootingPlace
-                    );
-                    actionToProcess++;
-                }
-//                else if (actionToProcess == 1) {
-//                    currentAction = new SequentialAction(
-//                            robot.getOrientRobotForShootAction(),
-//                            robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
-//
-//                            new RaceAction(
-//                                    robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
-//                                    robot.getLaunchAllArtifactsAction()
-//                            )
-//                    );
-//                    actionToProcess++;
-//                }
-                else if (actionToProcess == 2) {
-                    currentAction = new ParallelAction(
-                            robot.getStopShooterAction(),
-                            MoveToOutOfLine
-                    );
-                }
-            }
-
-            if (opMode.getRuntime() >= 25.0) {
-                actionToProcess = 2;
-                actionRunResult = false;
-            }
-            else {
-                if (currentAction != null) {
-                    actionRunResult = currentAction.run(new TelemetryPacket());
-                }
-            }
-
-            if (actionToProcess >= 1 && !actionRunResult && currentAction == null) {
-                robot.drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0), 0));
-            }
-
-            opMode.telemetry.update();
+                );
+        while (opMode.opModeIsActive()) {
         }
 
         robot.setEndPose(drive.localizer.getPose());
