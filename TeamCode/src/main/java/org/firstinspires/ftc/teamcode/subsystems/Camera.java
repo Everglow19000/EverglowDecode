@@ -147,6 +147,7 @@ public class Camera implements Subsystem{
     }
 
     public void start() {
+        limelight3A.setPollRateHz(100);
         limelight3A.start();
     }
 
@@ -212,10 +213,10 @@ public class Camera implements Subsystem{
                 limelight3A.pipelineSwitch(1);
             }
             else if (isUpdatePoseOnUpdate) {
-                double x = result.getBotpose_MT2().getPosition().toUnit(DistanceUnit.INCH).x;
-                double y = result.getBotpose_MT2().getPosition().toUnit(DistanceUnit.INCH).y;
+                double x = result.getBotpose().getPosition().toUnit(DistanceUnit.INCH).x;
+                double y = result.getBotpose().getPosition().toUnit(DistanceUnit.INCH).y;
 
-                localizer.setPose(new Pose2d(x, y, localizer.getPose().heading.toDouble()));
+                localizer.setPose(new Pose2d(x, y, result.getBotpose().getOrientation().getYaw(AngleUnit.RADIANS)));
             }
         }
     }

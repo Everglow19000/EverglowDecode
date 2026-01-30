@@ -47,32 +47,31 @@ public class FarAutonomousLeave {
             opMode.telemetry.update();
         }
 
-        robot.drive.localizer.setPose(new Pose2d(-60, -20 * isBlueValue, Math.toRadians(180)));
+        robot.drive.localizer.setPose(new Pose2d(-66, -20 * isBlueValue, Math.toRadians(180)));
 
         opMode.waitForStart();
 
-        Pose2d startingPlace;
-
-
-        double[] location = new double[3];
+//        Pose2d startingPlace;
+//
+//        double[] location = new double[3];
         Motif[] motifWrapper = new Motif[1];
-
-        Actions.runBlocking(
-                new SequentialAction(
-                        new ParallelAction(
-                                robot.getMotifFromObeliskAction(motifWrapper),
-                                robot.getScanArtifactColorsAction()
-                        ),
-                        robot.getLocalizeWithApriltagAction(location, true)
-                )
-        );
-
-        startingPlace = new Pose2d(location[0], location[1], location[2]);
-        opMode.telemetry.addData("stored Artifacts", robot.getFeedingMechanismContents());
-
-        robot.setMotif(motifWrapper[0]);
+//
+//        Actions.runBlocking(
+//                new SequentialAction(
+//                        new ParallelAction(
+//                                robot.getMotifFromObeliskAction(motifWrapper),
+//                                robot.getScanArtifactColorsAction()
+//                        ),
+//                        robot.getLocalizeWithApriltagAction(location, true)
+//                )
+//        );
+//
+//        startingPlace = new Pose2d(location[0], location[1], location[2]);
+//        opMode.telemetry.addData("stored Artifacts", robot.getFeedingMechanismContents());
+//
+//        robot.setMotif(motifWrapper[0]);
         MecanumDrive drive = robot.drive;
-        drive.localizer.setPose(startingPlace);
+//        drive.localizer.setPose(startingPlace);
 
 
         TrajectoryActionBuilder b_MoveToOutOfLine = drive.actionBuilder(drive.localizer.getPose())
@@ -80,9 +79,18 @@ public class FarAutonomousLeave {
 
 
         Action MoveToOutOfLine = b_MoveToOutOfLine.build();
+
+        AutonomousActions actions = new AutonomousActions(robot);
+
         opMode.waitForStart();
         Actions.runBlocking(
-                MoveToOutOfLine
+                new SequentialAction(
+                        new ParallelAction(
+                                MoveToOutOfLine,
+                                robot.getMotifFromObeliskAction(motifWrapper)
+                        ),
+                        actions.getUpdateMotifAction(motifWrapper)
+                )
         );
 
 

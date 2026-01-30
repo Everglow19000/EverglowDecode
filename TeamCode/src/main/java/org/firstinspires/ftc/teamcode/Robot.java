@@ -69,7 +69,7 @@ public class Robot extends RobotBase {
     }
     private static double CAMERA_RELIABALITY_DISTANCE = 100;
     public static Vector2d goalPoseDistanceStatic = new Vector2d(-58.374, -55.641);
-    public static Vector2d goalPoseOrientationStatic = new Vector2d(-56, -58);
+    public static Vector2d goalPoseOrientationStatic = new Vector2d(-72, -72);
     public static Vector2d goalEdge1Static = new Vector2d(-52, -61);
     public static Vector2d goalEdge2Static = new Vector2d(-66, -51);
     public static double timeBetweenShootsMS = 200;
@@ -150,7 +150,7 @@ public class Robot extends RobotBase {
         if (calculateDistanceFromGoal() >= 40) {
             return Utils.getOptimalAngleToShoot(goalPoseOrientation, pose);
         }
-        return Utils.getOptimalAngleToShoot(goalPoseOrientation, pose);
+        return Utils.getOptimalAngleToShoot(goalPoseDistance, pose);
     }
 
     public Rotation2d getOptimalAngleToShoot() {

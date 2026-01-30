@@ -64,13 +64,13 @@ public class CloseAutonomous {
 
         Actions.runBlocking(
                 new ParallelAction(
-                        robot.getLocalizeWithApriltagAction(position, true),
+//                        robot.getLocalizeWithApriltagAction(position, true),
                         robot.getScanArtifactColorsAction()
                 )
         );
 
-        Pose2d startingPlace = new Pose2d(position[0], position[1], position[2]);
-//        Pose2d startingPlace = robot.drive.localizer.getPose();
+//        Pose2d startingPlace = new Pose2d(position[0], position[1], position[2]);
+        Pose2d startingPlace = robot.drive.localizer.getPose();
 
         opMode.telemetry.addData("stored", robot.getFeedingMechanismContents());
 
@@ -85,15 +85,15 @@ public class CloseAutonomous {
 
         TrajectoryActionBuilder b_MoveToScanObelisk = drive.actionBuilder(startingPlace)
                 .setTangent(startingPlace.heading)
-                .strafeToSplineHeading(obeliskScanPosition, Math.toRadians(120 * isBlueValue));
+                .splineToSplineHeading(new Pose2d(obeliskScanPosition, Math.toRadians(140 * isBlueValue)), Math.toRadians(180));
 
         TrajectoryActionBuilder b_TurnToGoal = b_MoveToScanObelisk.endTrajectory().fresh()
                 .turnTo(robot.getOptimalAngleToShoot(obeliskScanPosition));
 
         TrajectoryActionBuilder b_MoveToArtifact1 = b_TurnToGoal.endTrajectory().fresh()
                 .setTangent(0)
-                .splineToSplineHeading(new Pose2d(-16, -30 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90 * isBlueValue))
-                .splineTo(new Vector2d(-16, -50 * isBlueValue), Math.toRadians(-90 * isBlueValue), new TranslationalVelConstraint(10));
+                .splineToSplineHeading(new Pose2d(-10, -30 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90 * isBlueValue))
+                .splineTo(new Vector2d(-10, -50 * isBlueValue), Math.toRadians(-90 * isBlueValue), new TranslationalVelConstraint(10));
 
         TrajectoryActionBuilder b_MoveToShootingPlace = b_MoveToArtifact1.endTrajectory().fresh()
                 .setTangent(Math.toRadians(90 * isBlueValue))
@@ -101,7 +101,7 @@ public class CloseAutonomous {
 
         TrajectoryActionBuilder b_MoveToOutOfLine = b_MoveToShootingPlace.endTrajectory().fresh()
                 .setTangent(0)
-                .splineToSplineHeading(new Pose2d(0, -48 * isBlueValue, Math.toRadians(90 * isBlueValue)), -(Math.PI/2.0) * isBlueValue);
+                .splineToSplineHeading(new Pose2d(0, -42 * isBlueValue, Math.toRadians(90 * isBlueValue)), -(Math.PI/2.0) * isBlueValue);
 
 
         Action MoveToScanObelisk = b_MoveToScanObelisk.build();
