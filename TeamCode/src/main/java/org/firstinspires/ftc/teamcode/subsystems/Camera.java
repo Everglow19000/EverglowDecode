@@ -113,6 +113,7 @@ public class Camera implements Subsystem{
                     location[0] = localizer.getPose().position.x;
                     location[1] = localizer.getPose().position.y;
                     location[2] = localizer.getPose().heading.toDouble();
+                    return false;
                 }
             }
 
