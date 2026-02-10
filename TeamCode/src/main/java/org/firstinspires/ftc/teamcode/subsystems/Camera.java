@@ -215,8 +215,9 @@ public class Camera implements Subsystem{
             else if (isUpdatePoseOnUpdate) {
                 double x = result.getBotpose().getPosition().toUnit(DistanceUnit.INCH).x;
                 double y = result.getBotpose().getPosition().toUnit(DistanceUnit.INCH).y;
+                double heading = result.getBotpose().getOrientation().getYaw(AngleUnit.RADIANS);
 
-                localizer.setPose(new Pose2d(x, y, result.getBotpose().getOrientation().getYaw(AngleUnit.RADIANS)));
+                localizer.setPose(new Pose2d(x, y, heading));
             }
         }
     }

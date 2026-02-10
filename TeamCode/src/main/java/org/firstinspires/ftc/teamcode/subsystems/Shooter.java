@@ -28,10 +28,10 @@ public class Shooter implements Subsystem {
     // --------------------
     // | Servo Parameters |
     // --------------------
-    public static double minServoPosition = 0.43;
-    public static double maxServoPosition = 0.645;
-    public static double minServoAngle = 4.95;
-    public static double maxServoAngle = 43.8;
+    public static double minServoPosition = 0.51;
+    public static double maxServoPosition = 0.71;
+    public static double minServoAngle = 3.0;
+    public static double maxServoAngle = 42.5;
     private static Servo.Direction servoDirection = Servo.Direction.REVERSE;
     private static InterpLUT servoAnglesLUT = Utils.interpLUTFromArrays( //TODO: FILL ME WITH MEASURED VALUES
             LUTsDistances,
