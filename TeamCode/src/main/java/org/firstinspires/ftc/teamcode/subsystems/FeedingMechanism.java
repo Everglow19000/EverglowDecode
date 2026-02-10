@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
@@ -17,15 +19,17 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.everglow_library.Subsystem;
 import org.firstinspires.ftc.teamcode.everglow_library.Utils;
 
+import java.util.Arrays;
+
 public class FeedingMechanism implements Subsystem {
-    public static double artifactDistanceFromSensor = 39;
-    public static double restOfRobotDistanceFromSensor = 42;
+    public static double artifactDistanceFromSensor1 = 34.5;
+    public static double artifactDistanceFromSensor2 = 44.5;
     public static double analogInputMin = 0.05484;
     public static double analogInputMax = 0.94939;
     public static double spindexerEncoderTolerance = 0.005;
     public enum FeedingServoPosition {
-        DOWN(0.5),
-        UP(0.74);
+        DOWN(0.6),
+        UP(0.84);
 
         public double position;
 
@@ -162,10 +166,13 @@ public class FeedingMechanism implements Subsystem {
 
 
     public class ScanCurrentArtifactAction implements Action {
-        private double noneSeenCount = 0;
-        private final double noneSeenThreshold = 30;
+        private int noneSeenCount = 0;
+        private int noneSeenThreshold;
+        private ScanCurrentArtifactAction(int noneSeenThreshold) {
+            this.noneSeenThreshold = noneSeenThreshold;
+        }
         private ScanCurrentArtifactAction() {
-
+            this(30);
         }
 
         @Override
@@ -175,7 +182,9 @@ public class FeedingMechanism implements Subsystem {
                 return false;
             }
             else if (noneSeenCount < noneSeenThreshold) {
-                noneSeenCount++;
+                if (noneSeenThreshold >= 0) {
+                    noneSeenCount++;
+                }
             }
             else {
                 storedArtifacts[targetSpindexerPosition.getSelectedArrayIndex()] = null;
@@ -202,6 +211,18 @@ public class FeedingMechanism implements Subsystem {
         }
     }
 
+    public class MoveFeedingServoAction implements Action {
+        private FeedingServoPosition targetPosition;
+        private MoveFeedingServoAction(FeedingServoPosition targetPosition) {
+            this.targetPosition = targetPosition;
+        }
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            setFeedingServoPosition(targetPosition);
+            return false;
+        }
+    }
     // servo that pushes artifacts into the shooter
     public Servo feedingServo;
     // servo that rotates the artifact in the spindexer
@@ -275,10 +296,10 @@ public class FeedingMechanism implements Subsystem {
         double sensor2Distance = colorSensor2.getDistance(DistanceUnit.MM);
 
         if (!updateLastColor) {
-            return sensor1Distance <= artifactDistanceFromSensor || sensor2Distance <= artifactDistanceFromSensor;
+            return sensor1Distance <= artifactDistanceFromSensor1 || sensor2Distance <= artifactDistanceFromSensor2;
         }
 
-        if (!(sensor1Distance <= artifactDistanceFromSensor || sensor2Distance <= artifactDistanceFromSensor)) {
+        if (!(sensor1Distance <= artifactDistanceFromSensor1 || sensor2Distance <= artifactDistanceFromSensor2)) {
             lastColor = null;
             lastArtifactColor = null;
             return false;
@@ -290,10 +311,10 @@ public class FeedingMechanism implements Subsystem {
         ArtifactColor color1 = null;
         ArtifactColor color2 = null;
 
-        if (sensor1Distance <= artifactDistanceFromSensor) {
+        if (sensor1Distance <= artifactDistanceFromSensor1) {
             color1 = matchColor(color1Value);
         }
-        if (sensor2Distance <= artifactDistanceFromSensor) {
+        if (sensor2Distance <= artifactDistanceFromSensor2) {
             color2 = matchColor(color2Value);
         }
 
@@ -470,6 +491,10 @@ public class FeedingMechanism implements Subsystem {
         else {
             int[] purpleArtifactPositions = getArtifactColorPositions(ArtifactColor.PURPLE);
             int[] greenArtifactPositions = getArtifactColorPositions(ArtifactColor.GREEN);
+            Log.i("FeedingMechanism", "stored: " + getStoredArtifacts());
+            Log.i("FeedingMechanism", "purplePositions: " + Arrays.toString(purpleArtifactPositions));
+            Log.i("FeedingMechanism", "greenPositions: " + Arrays.toString(greenArtifactPositions));
+            Log.i("FeedingMechanism", "motif: " + motif);
             if (motif == Motif.GPP) {
                 int purpleIndex = 0;
                 int greenIndex = 0;
@@ -574,6 +599,7 @@ public class FeedingMechanism implements Subsystem {
             }
         }
 
+        Log.i("FeedingMechanism", "result: " + Arrays.toString(result));
         return result;
     }
 
@@ -591,6 +617,18 @@ public class FeedingMechanism implements Subsystem {
 
     public MoveSpindexerAction getMoveSpindexerAction(SpindexerPosition position) {
         return new MoveSpindexerAction(position);
+    }
+
+    public ScanCurrentArtifactAction getScanCurrentArtifactAction(int noneSeenThreshold) {
+        return new ScanCurrentArtifactAction(noneSeenThreshold);
+    }
+
+    public ScanCurrentArtifactAction getScanCurrentArtifactAction() {
+        return new ScanCurrentArtifactAction();
+    }
+
+    public MoveFeedingServoAction getMoveFeedingServoAction(FeedingServoPosition position) {
+        return new MoveFeedingServoAction(position);
     }
 
     public Action getScanArtifactColorsAction() {

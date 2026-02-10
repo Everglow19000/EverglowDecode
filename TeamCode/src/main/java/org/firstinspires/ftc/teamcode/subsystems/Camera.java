@@ -25,6 +25,8 @@ import org.firstinspires.ftc.teamcode.everglow_library.Subsystem;
 
 import java.util.List;
 
+import Ori.Coval.Logging.Logger.KoalaLog;
+
 public class Camera implements Subsystem{
     public class DetermineMotifAction implements Action {
         private boolean hasStarted = false;
@@ -56,7 +58,7 @@ public class Camera implements Subsystem{
                 }
             }
 
-            if ((System.currentTimeMillis() - startTime) > timeUntilBail && motifWrapper[0] == null) {
+            if ((System.currentTimeMillis() - startTime) > timeUntilBail && !isFinished) {
                 motifWrapper[0] = Motif.NONE;
             }
 
@@ -70,6 +72,8 @@ public class Camera implements Subsystem{
         private int index = 0;
         private boolean hasStarted = false;
         private boolean isMT2;
+        private final int maxInvalidResultsCount = 50;
+        private int currInvalidResultsCount = 0;
 
         // location is a list of size 3 [x,y,heading]
         public FindLocationAction(double[] location, int amount, boolean isMT2) {
@@ -93,13 +97,24 @@ public class Camera implements Subsystem{
             }
             LLResult result = limelight3A.getLatestResult();
             if (result.isValid()) {
+                currInvalidResultsCount = 0;
                 if (isMT2) {
                     locations[index] = result.getBotpose_MT2();
                 }
                 else {
                     locations[index] = result.getBotpose();
                 }
+                KoalaLog.log("apriltag index", index, false);
                 index++;
+            }
+            else {
+                currInvalidResultsCount++;
+                if (currInvalidResultsCount >= maxInvalidResultsCount) {
+                    location[0] = localizer.getPose().position.x;
+                    location[1] = localizer.getPose().position.y;
+                    location[2] = localizer.getPose().heading.toDouble();
+                    return false;
+                }
             }
 
             if (index >= locations.length) {
@@ -133,6 +148,7 @@ public class Camera implements Subsystem{
     }
 
     public void start() {
+        limelight3A.setPollRateHz(100);
         limelight3A.start();
     }
 
@@ -148,7 +164,6 @@ public class Camera implements Subsystem{
             }
             else {
                 int wantedTagID = isBlue ? 20 : 24;
-
                 List<LLResultTypes.FiducialResult> fiducialResults = result.getFiducialResults();
                 Pose3D pose = null;
 
@@ -173,8 +188,12 @@ public class Camera implements Subsystem{
         return -1;
     }
 
+    // timeUntilBail is in MS
+    public DetermineMotifAction getDetermineMotifAction(Motif[] motifWrapper, double timeUntilBail) {
+        return new DetermineMotifAction(timeUntilBail, motifWrapper);
+    }
     public DetermineMotifAction getDetermineMotifAction(Motif[] motifWrapper) {
-        return new DetermineMotifAction(500.0, motifWrapper);
+        return getDetermineMotifAction(motifWrapper, 500);
     }
 
     public FindLocationAction getFindLocationAction(double[] location, int amount) {
@@ -194,10 +213,10 @@ public class Camera implements Subsystem{
                 limelight3A.pipelineSwitch(1);
             }
             else if (isUpdatePoseOnUpdate) {
-                double x = result.getBotpose_MT2().getPosition().toUnit(DistanceUnit.INCH).x;
-                double y = result.getBotpose_MT2().getPosition().toUnit(DistanceUnit.INCH).y;
+                double x = result.getBotpose().getPosition().toUnit(DistanceUnit.INCH).x;
+                double y = result.getBotpose().getPosition().toUnit(DistanceUnit.INCH).y;
 
-                localizer.setPose(new Pose2d(x, y, localizer.getPose().heading.toDouble()));
+                localizer.setPose(new Pose2d(x, y, result.getBotpose().getOrientation().getYaw(AngleUnit.RADIANS)));
             }
         }
     }

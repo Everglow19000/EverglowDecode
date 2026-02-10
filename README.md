@@ -1,21 +1,23 @@
-# 🚀 Everglow Quickstart
+# **🚀 Everglow Quickstart**
 Welcome to our comprehensive FTC GitHub template, designed to streamline your robot's autonomous capabilities with cutting-edge tools and libraries.
 
-## 🛠️ Core Technologies Included
-Road Runner
+## **🛠️ Core Technologies Included**
+
+
+### Road Runner
 A powerful motion planning library tailored for FTC, enabling precise 2D path following and trajectory generation. It allows your robot to navigate complex paths with control over velocity and acceleration.
 
-## FTCLib
-An all-encompassing library that simplifies FTC programming by providing modules for sensors, motors, servos, and utility functions, enhancing both rookie and veteran teams' coding efficiency. ​
+### Solverslib
+An all-encompassing library based on FTCLib that simplifies FTC programming by providing modules for sensors, motors, servos, and utility functions, enhancing both rookie and veteran teams' coding efficiency. ​
 
-## MeepMeep
+### MeepMeep
 A trajectory visualizer for Road Runner, allowing you to simulate and visualize your robot's paths before deployment, ensuring smooth and accurate autonomous routines. ​
 learnroadrunner.com
 
-## OTOSLocalizer
+### OTOSLocalizer
 Integrate the SparkFun Optical Tracking Odometry Sensor (OTOS) with Road Runner for precise localization, enhancing your robot's field awareness and positioning accuracy. 
 
-## Swerve Drive
+### Swerve Drive
 Implement a swerve drive system for omnidirectional movement, offering unparalleled maneuverability and control, ideal for complex field navigation.​
 
 ## 📥 Getting Started
@@ -24,7 +26,7 @@ Clone this repository to kickstart your FTC project with state-of-the-art naviga
 ## 🔗 Useful Links
 [Road Runner Documentation](https://learnroadrunner.com/)
 
-[FTCLib Documentation](https://ftclib.org/)
+[Solverslib Documentation]([https://ftclib.org/](https://docs.seattlesolvers.com/))
 
 [MeepMeep Visualizer](https://learnroadrunner.com/tool/meepmeep.html)
 

@@ -1,11 +1,16 @@
 package org.firstinspires.ftc.teamcode;
 
+import androidx.annotation.NonNull;
+
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.PoseVelocity2d;
+import com.acmerobotics.roadrunner.RaceAction;
 import com.acmerobotics.roadrunner.Rotation2d;
 import com.acmerobotics.roadrunner.SequentialAction;
+import com.acmerobotics.roadrunner.SleepAction;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
@@ -20,11 +25,54 @@ import org.firstinspires.ftc.teamcode.subsystems.Motif;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 
 public class Robot extends RobotBase {
+    public class LaunchAllArtifactsAction implements Action {
+        private FeedingMechanism.SpindexerPosition[] shootingSequence;
+        private boolean hasStarted = false;
+        private Action action;
+        private LaunchAllArtifactsAction() {
+        }
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            if (!hasStarted) {
+                hasStarted = true;
+
+                shootingSequence = feedingMechanism.getShootingSequence();
+                if (shootingSequence.length != 0) {
+                    action = new SequentialAction(
+                            feedingMechanism.getMoveSpindexerAction(shootingSequence[0]),
+                            new ParallelAction(
+                                    shooter.getWaitUntilShooterSpinupAction(),
+                                    new SleepAction(Robot.timeBetweenShootsMS/1000)
+                            ),
+                            feedingMechanism.getFeedSingleArtifactAction(shootingSequence[0])
+                    );
+                    for (int i = 1; i < shootingSequence.length; i++) {
+                        action = new SequentialAction(
+                                action,
+                                feedingMechanism.getMoveSpindexerAction(shootingSequence[i]),
+                                new ParallelAction(
+                                        shooter.getWaitUntilShooterSpinupAction(),
+                                        new SleepAction(Robot.timeBetweenShootsMS/1000)
+                                ),
+                                feedingMechanism.getFeedSingleArtifactAction(shootingSequence[i])
+                        );
+                    }
+                }
+                else {
+                    action = new ParallelAction();
+                }
+            }
+
+            return action.run(telemetryPacket);
+        }
+    }
     private static double CAMERA_RELIABALITY_DISTANCE = 100;
     public static Vector2d goalPoseDistanceStatic = new Vector2d(-58.374, -55.641);
-    public static Vector2d goalPoseOrientationStatic = new Vector2d(-75, -55);
+    public static Vector2d goalPoseOrientationStatic = new Vector2d(-72, -72);
     public static Vector2d goalEdge1Static = new Vector2d(-52, -61);
     public static Vector2d goalEdge2Static = new Vector2d(-66, -51);
+    public static double timeBetweenShootsMS = 200;
     public Vector2d goalPoseDistance;
     public Vector2d goalPoseOrientation;
     public Vector2d goalEdge1;
@@ -95,11 +143,18 @@ public class Robot extends RobotBase {
                 .build();
     }
 
-    public Rotation2d getOptimalAngleToShoot() {
+    public Rotation2d getOptimalAngleToShoot(Vector2d pose) {
         if (calculateDistanceFromGoal() >= CAMERA_RELIABALITY_DISTANCE) {
-            return Utils.getOptimalAngleToShoot(goalEdge1, goalEdge2, drive.localizer.getPose().position);
+            return Utils.getOptimalAngleToShoot(goalEdge1, goalEdge2, pose);
         }
-        return Utils.getOptimalAngleToShoot(goalPoseDistance, drive.localizer.getPose().position);
+        if (calculateDistanceFromGoal() >= 40) {
+            return Utils.getOptimalAngleToShoot(goalPoseOrientation, pose);
+        }
+        return Utils.getOptimalAngleToShoot(goalPoseDistance, pose);
+    }
+
+    public Rotation2d getOptimalAngleToShoot() {
+        return getOptimalAngleToShoot(drive.localizer.getPose().position);
     }
 
     public void setEndPose(Pose2d pose) {
@@ -120,6 +175,11 @@ public class Robot extends RobotBase {
     public Action getMotifFromObeliskAction(Motif[] motif) {
         return camera.getDetermineMotifAction(motif);
     }
+    // the contents of motif[0] will be changed according to the Motif on the obelisk
+    // timeUntilBail is in MS
+    public Action getMotifFromObeliskAction(Motif[] motif, double timeUntilBail) {
+        return camera.getDetermineMotifAction(motif, timeUntilBail);
+    }
     public Action getSpinUpShooterAction(double distance) {
         return new ParallelAction(
                 shooter.getStartUpShooterAction(distance),
@@ -130,24 +190,25 @@ public class Robot extends RobotBase {
         return shooter.getStopShooterSpinAction();
     }
     public Action getLaunchAllArtifactsAction() {
-        FeedingMechanism.SpindexerPosition[] shootingSequence = feedingMechanism.getShootingSequence();
-        if (shootingSequence.length != 0) {
-            SequentialAction action = new SequentialAction(
-                    shooter.getWaitUntilShooterSpinupAction(),
-                    feedingMechanism.getMoveSpindexerAction(shootingSequence[0]),
-                    feedingMechanism.getFeedSingleArtifactAction(shootingSequence[0])
-            );
-            for (int i = 1; i < shootingSequence.length; i++) {
-                action = new SequentialAction(
-                        action,
-                        shooter.getWaitUntilShooterSpinupAction(),
-                        feedingMechanism.getMoveSpindexerAction(shootingSequence[i]),
-                        feedingMechanism.getFeedSingleArtifactAction(shootingSequence[i])
-                );
-            }
-            return action;
-        }
-        return new ParallelAction();
+        return new LaunchAllArtifactsAction();
+//        FeedingMechanism.SpindexerPosition[] shootingSequence = feedingMechanism.getShootingSequence();
+//        if (shootingSequence.length != 0) {
+//            SequentialAction action = new SequentialAction(
+//                    shooter.getWaitUntilShooterSpinupAction(),
+//                    feedingMechanism.getMoveSpindexerAction(shootingSequence[0]),
+//                    feedingMechanism.getFeedSingleArtifactAction(shootingSequence[0])
+//            );
+//            for (int i = 1; i < shootingSequence.length; i++) {
+//                action = new SequentialAction(
+//                        action,
+//                        shooter.getWaitUntilShooterSpinupAction(),
+//                        feedingMechanism.getMoveSpindexerAction(shootingSequence[i]),
+//                        feedingMechanism.getFeedSingleArtifactAction(shootingSequence[i])
+//                );
+//            }
+//            return action;
+//        }
+//        return new ParallelAction();
     }
     public Action getScanArtifactColorsAction() {
         return feedingMechanism.getScanArtifactColorsAction();
@@ -157,6 +218,27 @@ public class Robot extends RobotBase {
     }
     public Action getStopIntakeAction() {
         return intake.getStopIntakeAction();
+    }
+
+    public Action getIntakeThreeAction(double timeUntilBail) {
+        return new RaceAction(
+                new SleepAction(timeUntilBail),
+                new ParallelAction(
+                        intake.getStartIntakeAction(),
+                        new SequentialAction(
+                                feedingMechanism.getMoveSpindexerAction(FeedingMechanism.SpindexerPosition.INTAKE_INDEX_0),
+                                feedingMechanism.getScanCurrentArtifactAction(100),
+                                feedingMechanism.getMoveSpindexerAction(FeedingMechanism.SpindexerPosition.INTAKE_INDEX_1),
+                                feedingMechanism.getScanCurrentArtifactAction(100),
+                                feedingMechanism.getMoveSpindexerAction(FeedingMechanism.SpindexerPosition.INTAKE_INDEX_2),
+                                feedingMechanism.getScanCurrentArtifactAction(100)
+                        )
+                )
+        );
+    }
+
+    public Action getMoveFeedingServoAction(FeedingMechanism.FeedingServoPosition position) {
+        return feedingMechanism.getMoveFeedingServoAction(position);
     }
 
     public String getFeedingMechanismContents() {
@@ -196,6 +278,14 @@ public class Robot extends RobotBase {
     public void stopIntake(){ //stop intake
         intake.stopIntake();
         feedingMechanism.stopIntaking();
+    }
+
+    public boolean isIntaking() {
+        return intake.isIntaking();
+    }
+
+    public void reverseIntake() {
+        intake.reverseIntake();
     }
 
     public void setSpindexerPosition(FeedingMechanism.SpindexerPosition position) {

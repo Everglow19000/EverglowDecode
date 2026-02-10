@@ -1,9 +1,9 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
 public enum Motif {
-    PPG(ArtifactColor.PURPLE, ArtifactColor.PURPLE, ArtifactColor.GREEN),
-    PGP(ArtifactColor.PURPLE, ArtifactColor.GREEN, ArtifactColor.PURPLE),
     GPP(ArtifactColor.GREEN, ArtifactColor.PURPLE, ArtifactColor.PURPLE),
+    PGP(ArtifactColor.PURPLE, ArtifactColor.GREEN, ArtifactColor.PURPLE),
+    PPG(ArtifactColor.PURPLE, ArtifactColor.PURPLE, ArtifactColor.GREEN),
     NONE(ArtifactColor.NONE, ArtifactColor.NONE, ArtifactColor.NONE);
     public ArtifactColor[] sequence;
 
@@ -12,5 +12,18 @@ public enum Motif {
         sequence[0] = color0;
         sequence[1] = color1;
         sequence[2] = color2;
+    }
+
+    public Motif getNext() {
+        if (this == GPP) {
+            return PGP;
+        }
+        else if (this == PGP) {
+            return PPG;
+        }
+        else if (this == PPG) {
+            return GPP;
+        }
+        return this;
     }
 }
