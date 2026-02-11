@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.Rotation2d;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
@@ -186,6 +187,32 @@ public class Camera implements Subsystem{
             }
         }
         return -1;
+    }
+    public Rotation2d getCameraHeadingOffsetFromAprilTag(boolean isBlue) {
+        LLResult result = limelight3A.getLatestResult();
+        if (result.isValid()) {
+            if (result.getPipelineIndex() != 1) {
+                limelight3A.pipelineSwitch(1);
+            }
+            else {
+                int wantedTagID = isBlue ? 20 : 24;
+                List<LLResultTypes.FiducialResult> fiducialResults = result.getFiducialResults();
+                double degreesError = -999;
+
+                for (int i = 0; i < fiducialResults.size(); i++) {
+                    if (fiducialResults.get(i).getFiducialId() == wantedTagID) {
+                        degreesError = fiducialResults.get(i).getTargetXDegrees();
+                    }
+                }
+
+                if (degreesError == -999) {
+                    return null;
+                }
+
+                return Rotation2d.exp(Math.toRadians(degreesError));
+            }
+        }
+        return null;
     }
 
     // timeUntilBail is in MS
