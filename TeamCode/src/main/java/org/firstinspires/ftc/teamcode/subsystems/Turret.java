@@ -1,5 +1,9 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import androidx.annotation.NonNull;
+
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
+import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Rotation2d;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -8,18 +12,41 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.seattlesolvers.solverslib.hardware.motors.Motor;
 import com.seattlesolvers.solverslib.hardware.motors.MotorEx;
 
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.everglow_library.Subsystem;
 
 public class Turret implements Subsystem  {
+    public static double HOME_TURRET_POWER = 0.5;
+    public static double MECHANICAL_STOPPER_CURRENT_MILLIAMPS = 750*(HOME_TURRET_POWER*10);
+    public class HomeTurretAction implements Action {
+        boolean hasStarted = false;
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            if (!hasStarted) {
+                hasStarted = true;
+                turretMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                turretMotor.setPower(-HOME_TURRET_POWER);
+            }
+
+            if (turretMotor.getCurrent(CurrentUnit.MILLIAMPS) > MECHANICAL_STOPPER_CURRENT_MILLIAMPS) {
+                turretMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                turretMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                turretMotor.setPower(MOTOR_POWER);
+                return false;
+            }
+            return true;
+        }
+    }
     // how many ticks the motor has from it's homing point to its max
-    public static int MAX_TICK_RANGE = 4550;
+    public static int MAX_TICK_RANGE = 1730;
     // what angle can the turret rotate (due to the mechanical stop)
     public static Rotation2d MAX_ANGLE_RANGE = Rotation2d.exp(Math.toRadians(350));
     // at what offset is the 0 position angle is to the robot's heading
-    public static Rotation2d ANGLE_OFFSET_TO_ROBOT = Rotation2d.exp(Math.toRadians(45));
+    public static Rotation2d ANGLE_OFFSET_TO_ROBOT = Rotation2d.exp(Math.toRadians(50));
     public static DcMotorSimple.Direction DIRECTION = DcMotorSimple.Direction.REVERSE;
     public static double RADIANS_TO_TICKS_CONSTANT = (MAX_TICK_RANGE/rotation2dToTwoPIRange(MAX_ANGLE_RANGE));
-    public static double MOTOR_POWER = 1.0;
+    public static double MOTOR_POWER = 0.8;
     private int encoderPositionOffset = 0;
     public DcMotorEx turretMotor;
     // what position motor was last time checked. useful for AUTO -> TELE transition.
@@ -51,27 +78,34 @@ public class Turret implements Subsystem  {
     // makes sure it isn't "on" the mechanical stopper.
     public Rotation2d validateRotation(Rotation2d rotation) {
         double homeAngle = rotation2dToTwoPIRange(ANGLE_OFFSET_TO_ROBOT);
-        double maxAllowableAngle = rotation2dToTwoPIRange(MAX_ANGLE_RANGE);
+        double otherSideHomeAngle = rotation2dToTwoPIRange(ANGLE_OFFSET_TO_ROBOT) - (Math.PI*2 - rotation2dToTwoPIRange(MAX_ANGLE_RANGE));
 
-        double vectorAngle = rotation2dToTwoPIRange(Rotation2d.exp(rotation2dToTwoPIRange(rotation) - homeAngle));
+        double vectorAngle = rotation2dToTwoPIRange(rotation);
 
-        if (vectorAngle < maxAllowableAngle - 0.0001) {
-            return rotation;
+        if (vectorAngle < homeAngle && vectorAngle > otherSideHomeAngle) {
+            return Math.abs(vectorAngle - homeAngle) < Math.abs(vectorAngle - otherSideHomeAngle) ? ANGLE_OFFSET_TO_ROBOT : Rotation2d.exp(otherSideHomeAngle);
         }
         else {
-            if (vectorAngle > Math.PI + (maxAllowableAngle/2)) {
-                return ANGLE_OFFSET_TO_ROBOT;
-            }
-            else {
-                return MAX_ANGLE_RANGE;
-            }
+            return rotation;
         }
     }
+    // gets a rotation in local space (so 0 is the robot's heading) and converts it to motor ticks.
     public int wantedAngleToTicks(Rotation2d rotation) {
-        rotation = validateRotation(rotation);
-        double vectorAngle = rotation2dToTwoPIRange(Rotation2d.exp(rotation2dToTwoPIRange(rotation) - rotation2dToTwoPIRange(ANGLE_OFFSET_TO_ROBOT)));
+        if (rotation != null) {
+            rotation = validateRotation(rotation);
+            double vectorAngle = rotation2dToTwoPIRange(Rotation2d.exp(rotation2dToTwoPIRange(rotation) - rotation2dToTwoPIRange(ANGLE_OFFSET_TO_ROBOT)));
 
-        return (int)(vectorAngle*RADIANS_TO_TICKS_CONSTANT);
+            return (int)(vectorAngle*RADIANS_TO_TICKS_CONSTANT);
+        }
+        return -9999999;
+    }
+
+    public static Rotation2d globalRotationToLocal(Rotation2d wantedRotation, Rotation2d robotHeading) {
+        return wantedRotation.times(robotHeading.inverse());
+    }
+
+    public HomeTurretAction getHomeTurretAction() {
+        return new HomeTurretAction();
     }
 
     @Override
