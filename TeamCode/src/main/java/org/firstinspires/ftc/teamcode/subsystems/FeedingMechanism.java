@@ -24,8 +24,8 @@ public class FeedingMechanism implements Subsystem {
     public static double analogInputMax = 0.94939;
     public static double spindexerEncoderTolerance = 0.005;
     public enum FeedingServoPosition {
-        DOWN(0.5),
-        UP(0.74);
+        DOWN(0.52),
+        UP(0.31);
 
         public double position;
 
@@ -150,13 +150,13 @@ public class FeedingMechanism implements Subsystem {
                 storedArtifacts[position.getSelectedArrayIndex()] = null;
             }
 
-            if (hasStartedReturn && limitSwitch.getState() && System.currentTimeMillis() - returnStartTime >= moveTime) {
+            if (hasStartedReturn && !isFeedingServoInPosition() && System.currentTimeMillis() - returnStartTime >= moveTime) {
                 setFeedingServoPosition(FeedingServoPosition.UP);
                 setSpindexerPosition(position);
                 hasStartedReturn = false;
             }
 
-            return !(hasStartedReturn && !limitSwitch.getState());
+            return !(hasStartedReturn && isFeedingServoInPosition());
         }
     }
 
@@ -208,24 +208,22 @@ public class FeedingMechanism implements Subsystem {
     public Servo spindexerServo;
     // analog input from the spindexer axon servo
     public AnalogInput spindexerEncoder;
+    // analog input from the feeding axon servo
+    public AnalogInput feedingEncoder;
     RevColorSensorV3 colorSensor1;
     RevColorSensorV3 colorSensor2;
-    //swyft sense magnetic limit switch, true if feedingServo is down
-    public DigitalChannel limitSwitch;
     SpindexerPosition targetSpindexerPosition;
     FeedingServoPosition currentFeedingServoPosition;
     Motif motif;
     ArtifactColor[] storedArtifacts = new ArtifactColor[3];
     public FeedingMechanism(HardwareMap hardwareMap, Motif motif) {
         this.feedingServo = hardwareMap.get(Servo.class,"feedingServo");
-        feedingServo.setDirection(Servo.Direction.REVERSE);
         spindexerServo = hardwareMap.get(Servo.class, "spindexerServo");
         this.colorSensor1 = hardwareMap.get(RevColorSensorV3.class,"intakeSensor1");
         this.colorSensor2 = hardwareMap.get(RevColorSensorV3.class,"intakeSensor2");
-        this.limitSwitch = hardwareMap.get(DigitalChannel.class, "feedingLimitSwitch");
-        this.limitSwitch.setMode(DigitalChannel.Mode.INPUT);
         this.motif = motif;
         spindexerEncoder = hardwareMap.get(AnalogInput.class, "spindexerInput");
+        feedingEncoder = hardwareMap.get(AnalogInput.class, "feedingServoInput");
         SpindexerPosition[] values = SpindexerPosition.values();
         int minIndex = 0;
 
@@ -412,8 +410,17 @@ public class FeedingMechanism implements Subsystem {
         return ((spindexerEncoder.getVoltage()/spindexerEncoder.getMaxVoltage()) - analogInputMin)/(analogInputMax - analogInputMin);
     }
 
+    // only this should be used to access the encoder's position, as this matches the encoder's reading to the servo's position (they are same when servo isn't moving)
+    public double getScaledFeedingEncoderPosition() {
+        return ((feedingEncoder.getVoltage()/feedingEncoder.getMaxVoltage()) - analogInputMin)/(analogInputMax - analogInputMin);
+    }
+
     public boolean isSpindexerInPosition() {
         return Math.abs(getScaledSpindexerEncoderPosition() - targetSpindexerPosition.position) <= spindexerEncoderTolerance;
+    }
+
+    public boolean isFeedingServoInPosition() {
+        return Math.abs(getScaledFeedingEncoderPosition() - currentFeedingServoPosition.position) <= spindexerEncoderTolerance;
     }
 
     private int countArtifactsInSpindexer() {
