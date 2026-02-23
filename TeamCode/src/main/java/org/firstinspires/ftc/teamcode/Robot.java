@@ -221,19 +221,22 @@ public class Robot extends RobotBase {
     }
 
     public Action getIntakeThreeAction(double timeUntilBail) {
-        return new RaceAction(
-                new SleepAction(timeUntilBail),
-                new ParallelAction(
-                        intake.getStartIntakeAction(),
-                        new SequentialAction(
-                                feedingMechanism.getMoveSpindexerAction(FeedingMechanism.SpindexerPosition.INTAKE_INDEX_0),
-                                feedingMechanism.getScanCurrentArtifactAction(100),
-                                feedingMechanism.getMoveSpindexerAction(FeedingMechanism.SpindexerPosition.INTAKE_INDEX_1),
-                                feedingMechanism.getScanCurrentArtifactAction(100),
-                                feedingMechanism.getMoveSpindexerAction(FeedingMechanism.SpindexerPosition.INTAKE_INDEX_2),
-                                feedingMechanism.getScanCurrentArtifactAction(100)
+        return new SequentialAction(
+                new RaceAction(
+                        new SleepAction(timeUntilBail),
+                        new ParallelAction(
+                                intake.getStartIntakeAction(),
+                                new SequentialAction(
+                                        feedingMechanism.getMoveSpindexerAction(FeedingMechanism.SpindexerPosition.INTAKE_INDEX_0),
+                                        feedingMechanism.getScanCurrentArtifactAction(100),
+                                        feedingMechanism.getMoveSpindexerAction(FeedingMechanism.SpindexerPosition.INTAKE_INDEX_1),
+                                        feedingMechanism.getScanCurrentArtifactAction(100),
+                                        feedingMechanism.getMoveSpindexerAction(FeedingMechanism.SpindexerPosition.INTAKE_INDEX_2),
+                                        feedingMechanism.getScanCurrentArtifactAction(100)
+                                )
                         )
-                )
+                ),
+                intake.getStopIntakeAction()
         );
     }
 
