@@ -24,6 +24,7 @@ public class FeedingMechanismTesting extends LinearOpMode {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         feedingMechanism = new FeedingMechanism(hardwareMap, Motif.NONE);
         AnalogInput spindexerInput = hardwareMap.get(AnalogInput.class, "spindexerInput");
+        AnalogInput feedingInput = hardwareMap.get(AnalogInput.class, "feedingServoInput");
 
         waitForStart();
 
@@ -39,7 +40,7 @@ public class FeedingMechanismTesting extends LinearOpMode {
         telemetry.addLine("scanning action started");
         telemetry.update();
 
-        Actions.runBlocking(feedingMechanism.getScanArtifactColorsAction());
+//        Actions.runBlocking(feedingMechanism.getScanArtifactColorsAction());
 
         while (opModeIsActive()) {
             if (gamepad1.circle && !flagCircle) {
@@ -62,9 +63,10 @@ public class FeedingMechanismTesting extends LinearOpMode {
                 flagSquare = gamepad1.square;
             }
 
+
             telemetry.addData("is in position", feedingMechanism.isSpindexerInPosition());
-            telemetry.addData("limit switch sensing", !feedingMechanism.limitSwitch.getState());
             telemetry.addData("analog spindexer pos", spindexerInput.getVoltage()/spindexerInput.getMaxVoltage());
+            telemetry.addData("analog feeding pos", feedingInput.getVoltage()/feedingInput.getMaxVoltage());
             telemetry.addData("curr spindexer pos", feedingMechanism.getTargetSpindexerPosition().name());
             telemetry.addData("spindexer pos value", feedingMechanism.getTargetSpindexerPosition().position);
             telemetry.addData("contents", feedingMechanism.getStoredArtifacts());
