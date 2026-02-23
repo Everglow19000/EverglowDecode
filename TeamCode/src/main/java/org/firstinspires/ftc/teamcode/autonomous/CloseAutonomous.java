@@ -135,14 +135,20 @@ public class CloseAutonomous {
         );
 
 
-        Action MoveToShootingPlace1 = b_MoveToShootingPlace1.build();
+        Action MoveToShootingPlace1 = new SequentialAction(
+                b_MoveToShootingPlace1.build(),
+                new DeferredAction(() -> robot.getOrientRobotForShootAction())
+        );
 
         Action MoveToArtifact2 = new ParallelAction(
                 b_MoveToArtifact2.build(),
                 robot.getIntakeThreeAction(4)
         );
 
-        Action MoveToShootingPlace2 = b_MoveToShootingPlace2.build();
+        Action MoveToShootingPlace2 = new SequentialAction(
+                b_MoveToShootingPlace2.build(),
+                new DeferredAction(() -> robot.getOrientRobotForShootAction())
+        );
 
 
 
