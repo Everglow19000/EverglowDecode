@@ -7,24 +7,14 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
-import com.acmerobotics.roadrunner.PoseVelocity2d;
-import com.acmerobotics.roadrunner.RaceAction;
 import com.acmerobotics.roadrunner.SequentialAction;
-import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.seattlesolvers.solverslib.gamepad.GamepadEx;
 import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
 
-import org.firstinspires.ftc.teamcode.MecanumDrive;
 import org.firstinspires.ftc.teamcode.Robot;
-import org.firstinspires.ftc.teamcode.everglow_library.Utils;
-import org.firstinspires.ftc.teamcode.subsystems.Camera;
-import org.firstinspires.ftc.teamcode.subsystems.Shooter;
-
-import java.util.Arrays;
 
 @TeleOp(name = "ShooterTuning", group="Tests")
 @Config
@@ -86,7 +76,7 @@ public class ShooterTuning extends LinearOpMode {
                 }
             }
 
-            telemetry.addData("motor 1 speed", robot.shooter.getFlywheelMotor1CurrentTicksPerSecond());
+            telemetry.addData("motor 1 speed", robot.shooter.getFlywheelMotorCurrentTicksPerSecond());
             telemetry.addData("motor 2 speed", robot.shooter.getFlywheelMotor2CurrentTicksPerSecond());
             telemetry.addData("desired speed", robot.shooter.desiredFlywheelSpeed);
 
