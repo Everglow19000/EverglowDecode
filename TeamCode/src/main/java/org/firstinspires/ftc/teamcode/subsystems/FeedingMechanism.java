@@ -480,7 +480,7 @@ public class FeedingMechanism implements Subsystem {
     public SpindexerPosition[] getShootingSequence() {
         SpindexerPosition[] result = new SpindexerPosition[countArtifactsInSpindexer()];
 
-        if (motif == Motif.NONE) {
+        if (motif == Motif.NONE || motif == null) {
             SpindexerPosition currIndexStored;
             if (targetSpindexerPosition == SpindexerPosition.SHOOT_INDEX_0 || targetSpindexerPosition == SpindexerPosition.SHOOT_INDEX_1 || targetSpindexerPosition == SpindexerPosition.SHOOT_INDEX_2) {
                 currIndexStored = targetSpindexerPosition;
@@ -690,7 +690,7 @@ public class FeedingMechanism implements Subsystem {
     public static SpindexerPosition[] getShootingSequence(Motif motif, ArtifactColor[] storedArtifacts, SpindexerPosition currentSpindexerPosition) {
         SpindexerPosition[] result = new SpindexerPosition[countArtifactsInSpindexer(storedArtifacts)];
 
-        if (motif == Motif.NONE) {
+        if (motif == Motif.NONE || motif == null) {
             SpindexerPosition currIndexStored;
             if (currentSpindexerPosition == SpindexerPosition.SHOOT_INDEX_0 || currentSpindexerPosition == SpindexerPosition.SHOOT_INDEX_1 || currentSpindexerPosition == SpindexerPosition.SHOOT_INDEX_2) {
                 currIndexStored = currentSpindexerPosition;

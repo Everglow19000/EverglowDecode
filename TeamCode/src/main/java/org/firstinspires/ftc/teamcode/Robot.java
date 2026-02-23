@@ -82,7 +82,7 @@ public class Robot extends RobotBase {
     public static Motif currentMotif;
     private static Pose2d lastActivationEndPose = null;
 
-    Intake intake;
+    public Intake intake;
     public Camera camera;
     public Shooter shooter;
     public FeedingMechanism feedingMechanism;

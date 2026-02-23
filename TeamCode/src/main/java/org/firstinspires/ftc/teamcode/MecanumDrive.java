@@ -95,8 +95,8 @@ public final class MecanumDrive {
     }
 
     public static Params PARAMS = new Params();
-    public static double holdHeadingP = 1.5;
-    public static double holdHeadingD = 0;
+    public static double holdHeadingP = 0.75;
+    public static double holdHeadingD = 0.05;
 
     public final MecanumKinematics kinematics = new MecanumKinematics(
             PARAMS.inPerTick * PARAMS.trackWidthTicks, PARAMS.inPerTick / PARAMS.lateralInPerTick);

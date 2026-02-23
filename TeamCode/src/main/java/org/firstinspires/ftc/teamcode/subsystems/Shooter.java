@@ -119,10 +119,10 @@ public class Shooter implements Subsystem {
     }
 
 
-    MotorEx flywheelMotor1;
-    MotorEx flywheelMotor2;
+    public MotorEx flywheelMotor1;
+    public MotorEx flywheelMotor2;
     Servo hoodServo;
-    public PIDFController flywheelPIDF = new PIDFController(0.025, 0.2, 0, 0.0001);
+    public PIDFController flywheelPIDF = new PIDFController(0.025, 0, 0.0001, 0.0001);
     public double desiredFlywheelSpeed = 0; // [ticks/s]
     private double targetServoPosition = 0;
 
@@ -169,7 +169,7 @@ public class Shooter implements Subsystem {
     }
 
     public double getFlywheelCurrentRPM() {
-        return (flywheelMotor1.getCorrectedVelocity()/flywheelMotor1.getCPR())*60.0;
+        return (flywheelMotor2.getCorrectedVelocity()/flywheelMotor2.getCPR())*60.0;
     }
 
     public double getFlywheel1Power() {
@@ -180,7 +180,7 @@ public class Shooter implements Subsystem {
     }
 
     public double getFlywheelMotorCurrentTicksPerSecond() {
-        return flywheelMotor1.getCorrectedVelocity();
+        return flywheelMotor2.getCorrectedVelocity();
     }
 
     private double clampDistance(double distance) {
@@ -215,7 +215,7 @@ public class Shooter implements Subsystem {
     }
 
     public boolean isFlywheelFinishedSpinning() {
-        return Math.abs(flywheelMotor1.getCorrectedVelocity() - desiredFlywheelSpeed) <= 20;
+        return Math.abs(flywheelMotor2.getCorrectedVelocity() - desiredFlywheelSpeed) <= 20;
     }
 
     public StopShooterSpinAction getStopShooterSpinAction() {

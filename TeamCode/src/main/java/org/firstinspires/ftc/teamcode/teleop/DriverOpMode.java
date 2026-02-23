@@ -133,6 +133,15 @@ public class DriverOpMode extends LinearOpMode {
                 KoalaLog.log("Shoot succeed", "yay", false);
             }
 
+            if (robot.feedingMechanism.isIntaking()) {
+                if (!robot.feedingMechanism.isSpindexerInPosition()) {
+                    robot.intake.stopIntake();
+                }
+                else {
+                    robot.intake.startIntake();
+                }
+            }
+
             if (robot.feedingMechanism.isNowStoppedIntaking()) {
                 gamepad.gamepad.runRumbleEffect(endSpindexerActionRumble);
                 shouldSpinUpShooter = true;
@@ -191,10 +200,10 @@ public class DriverOpMode extends LinearOpMode {
                 currentAction = robot.getScanArtifactColorsAction();
             }
 
-            if (currentAction == null && spindexerAvailable && gamepad.wasJustPressed(GamepadKeys.Button.RIGHT_BUMPER)) {
+            if (currentAction == null && spindexerAvailable && gamepad.isDown(GamepadKeys.Button.RIGHT_BUMPER)) {
                 robot.startIntake();
             }
-            else if (currentAction == null && !spindexerAvailable || gamepad.wasJustReleased(GamepadKeys.Button.RIGHT_BUMPER)) {
+            else {
                 robot.stopIntake();
             }
 

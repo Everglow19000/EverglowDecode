@@ -16,6 +16,8 @@ import org.firstinspires.ftc.teamcode.subsystems.FeedingMechanism;
 
 import java.util.Arrays;
 
+import kotlin.collections.UArraySortingKt;
+
 @TeleOp(name="Color Sensor Testing", group="Tests")
 @Config
 public class ColorSensorTesting extends LinearOpMode {
@@ -33,11 +35,13 @@ public class ColorSensorTesting extends LinearOpMode {
 
     private ArtifactColor matchColor(NormalizedRGBA rgba) {
         double[] lastColorArray = ArtifactColor.NormalizedRGBAToArray(rgba);
-        if (Utils.areNormalizedRGBArraysSimilar(lastColorArray, Utils.normalizeArray(new double[]{greenRedValue, greenGreenValue, greenBlueValue}))) {
+        double greenDistance = Utils.getDistanceOf3dVectors(lastColorArray, Utils.normalizeArray(new double[]{greenRedValue, greenGreenValue, greenBlueValue}, true));
+        double purpleDistance = Utils.getDistanceOf3dVectors(lastColorArray, Utils.normalizeArray(new double[]{purpleRedValue, purpleGreenValue, purpleBlueValue}, true));
+        if (Utils.areNormalizedRGBArraysSimilar(lastColorArray, Utils.normalizeArray(new double[]{greenRedValue, greenGreenValue, greenBlueValue}, true)) && greenDistance < purpleDistance) {
             return ArtifactColor.GREEN;
         }
 
-        if (Utils.areNormalizedRGBArraysSimilar(lastColorArray, Utils.normalizeArray(new double[]{purpleRedValue, purpleGreenValue, purpleBlueValue}))) {
+        if (Utils.areNormalizedRGBArraysSimilar(lastColorArray, Utils.normalizeArray(new double[]{purpleRedValue, purpleGreenValue, purpleBlueValue}, true)) && purpleDistance < greenDistance) {
             return ArtifactColor.PURPLE;
         }
 
@@ -89,13 +93,14 @@ public class ColorSensorTesting extends LinearOpMode {
                     matchedColor = null;
                 }
                 double[] rawColors = ArtifactColor.NormalizedRGBAToArray(currentColor);
-                double greenDistance = Utils.getDistanceOf3dVectors(rawColors, Utils.normalizeArray(new double[]{greenRedValue, greenGreenValue, greenBlueValue}));
+                double greenDistance = Utils.getDistanceOf3dVectors(rawColors, Utils.normalizeArray(new double[]{greenRedValue, greenGreenValue, greenBlueValue}, true));
 
-                double purpleDistance = Utils.getDistanceOf3dVectors(rawColors, Utils.normalizeArray(new double[]{purpleRedValue, purpleGreenValue, purpleBlueValue}));
+                double purpleDistance = Utils.getDistanceOf3dVectors(rawColors, Utils.normalizeArray(new double[]{purpleRedValue, purpleGreenValue, purpleBlueValue}, true));
                 telemetry.addData("greenDistance", greenDistance);
                 telemetry.addData("purpleDistance", purpleDistance);
                 telemetry.addData("raw color value", Arrays.toString(rawColors));
                 telemetry.addData("matched color", matchedColor.name());
+                telemetry.addData("purple color", Arrays.toString(ArtifactColor.PURPLE.color));
             }
             else {
                 telemetry.addLine("No artifact is in!");

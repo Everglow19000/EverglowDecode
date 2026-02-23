@@ -14,6 +14,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.seattlesolvers.solverslib.gamepad.GamepadEx;
 import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
 
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.Robot;
 
 @TeleOp(name = "ShooterTuning", group="Tests")
@@ -76,8 +77,8 @@ public class ShooterTuning extends LinearOpMode {
                 }
             }
 
-            telemetry.addData("motor 1 speed", robot.shooter.getFlywheelMotorCurrentTicksPerSecond());
-            telemetry.addData("motor 2 speed", robot.shooter.getFlywheelMotor2CurrentTicksPerSecond());
+            telemetry.addData("motor speed", robot.shooter.getFlywheelMotorCurrentTicksPerSecond());
+            telemetry.addData("flywheel motor current", robot.shooter.flywheelMotor1.getCurrent(CurrentUnit.MILLIAMPS));
             telemetry.addData("desired speed", robot.shooter.desiredFlywheelSpeed);
 
 //            telemetry.addData("feeding mechanism intaking", robot.feedingMechanism.isIntaking());
