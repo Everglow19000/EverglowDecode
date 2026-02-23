@@ -76,8 +76,7 @@ public class ShooterTuning extends LinearOpMode {
                 }
             }
 
-            telemetry.addData("motor 1 speed", robot.shooter.getFlywheelMotorCurrentTicksPerSecond());
-            telemetry.addData("motor 2 speed", robot.shooter.getFlywheelMotor2CurrentTicksPerSecond());
+            telemetry.addData("flywheel speed", robot.shooter.getFlywheelMotorCurrentTicksPerSecond());
             telemetry.addData("desired speed", robot.shooter.desiredFlywheelSpeed);
 
 //            telemetry.addData("feeding mechanism intaking", robot.feedingMechanism.isIntaking());

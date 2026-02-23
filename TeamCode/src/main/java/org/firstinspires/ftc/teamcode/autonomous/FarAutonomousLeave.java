@@ -40,38 +40,13 @@ public class FarAutonomousLeave {
         opMode.telemetry = new MultipleTelemetry(opMode.telemetry, FtcDashboard.getInstance().getTelemetry());
 
 
-        while (opMode.opModeInInit() && !opMode.isStopRequested()) {
-            robot.camera.start();
-            robot.camera.setPipeline(2);
-            opMode.telemetry.addData("current camera reading", robot.camera.status());
-            opMode.telemetry.update();
-        }
-
         robot.drive.localizer.setPose(new Pose2d(-66, -20 * isBlueValue, Math.toRadians(180)));
 
         opMode.waitForStart();
 
-//        Pose2d startingPlace;
-//
-//        double[] location = new double[3];
         Motif[] motifWrapper = new Motif[1];
-//
-//        Actions.runBlocking(
-//                new SequentialAction(
-//                        new ParallelAction(
-//                                robot.getMotifFromObeliskAction(motifWrapper),
-//                                robot.getScanArtifactColorsAction()
-//                        ),
-//                        robot.getLocalizeWithApriltagAction(location, true)
-//                )
-//        );
-//
-//        startingPlace = new Pose2d(location[0], location[1], location[2]);
-//        opMode.telemetry.addData("stored Artifacts", robot.getFeedingMechanismContents());
-//
-//        robot.setMotif(motifWrapper[0]);
+
         MecanumDrive drive = robot.drive;
-//        drive.localizer.setPose(startingPlace);
 
 
         TrajectoryActionBuilder b_MoveToOutOfLine = drive.actionBuilder(drive.localizer.getPose())
@@ -92,8 +67,6 @@ public class FarAutonomousLeave {
                         actions.getUpdateMotifAction(motifWrapper)
                 )
         );
-
-
         while (opMode.opModeIsActive()) {
         }
 

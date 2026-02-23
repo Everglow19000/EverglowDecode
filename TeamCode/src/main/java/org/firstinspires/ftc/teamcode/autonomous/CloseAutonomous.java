@@ -25,6 +25,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.teamcode.MecanumDrive;
 import org.firstinspires.ftc.teamcode.Robot;
+import org.firstinspires.ftc.teamcode.everglow_library.DeferredAction;
 import org.firstinspires.ftc.teamcode.everglow_library.Utils;
 import org.firstinspires.ftc.teamcode.subsystems.FeedingMechanism;
 import org.firstinspires.ftc.teamcode.subsystems.Motif;
@@ -81,96 +82,108 @@ public class CloseAutonomous {
         robot.drive.localizer.setPose(startingPlace);
         MecanumDrive drive = robot.drive;
 
-        Vector2d obeliskScanPosition = new Vector2d(-36, -18 * isBlueValue);
+        Vector2d obeliskScanPosition = new Vector2d(-24, -18 * isBlueValue);
 
         TrajectoryActionBuilder b_MoveToScanObelisk = drive.actionBuilder(startingPlace)
-                .setTangent(startingPlace.heading)
-                .splineToSplineHeading(new Pose2d(obeliskScanPosition, Math.toRadians(140 * isBlueValue)), Math.toRadians(180));
+                .splineToSplineHeading(new Pose2d(obeliskScanPosition, Math.toRadians(150 * isBlueValue)), Math.toRadians(0));
 
-        TrajectoryActionBuilder b_TurnToGoal = b_MoveToScanObelisk.endTrajectory().fresh()
-                .turnTo(robot.getOptimalAngleToShoot(obeliskScanPosition));
-
-        TrajectoryActionBuilder b_MoveToArtifact1 = b_TurnToGoal.endTrajectory().fresh()
+        TrajectoryActionBuilder b_MoveToArtifact1 = b_MoveToScanObelisk.endTrajectory().fresh()
                 .setTangent(0)
-                .splineToSplineHeading(new Pose2d(-10, -30 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90 * isBlueValue))
-                .splineTo(new Vector2d(-10, -50 * isBlueValue), Math.toRadians(-90 * isBlueValue), new TranslationalVelConstraint(10));
+                .splineToSplineHeading(new Pose2d(-12, -30 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90 * isBlueValue))
+                .splineTo(new Vector2d(-12, -45 * isBlueValue), Math.toRadians(-90 * isBlueValue), new TranslationalVelConstraint(20));
 
-        TrajectoryActionBuilder b_MoveToShootingPlace = b_MoveToArtifact1.endTrajectory().fresh()
-                .setTangent(Math.toRadians(90 * isBlueValue))
-                .splineToSplineHeading(new Pose2d(-30, -28 * isBlueValue, Math.toRadians(-135*isBlueValue)), Math.toRadians(180));
+        TrajectoryActionBuilder b_MoveToCloseGate = b_MoveToArtifact1
+                .splineToSplineHeading(new Pose2d(-5, -52 * isBlueValue, Math.toRadians(90 * isBlueValue)), Math.toRadians(-45 * isBlueValue))
+                .strafeTo(new Vector2d(-5, -56))
+                .waitSeconds(1);
 
-        TrajectoryActionBuilder b_MoveToOutOfLine = b_MoveToShootingPlace.endTrajectory().fresh()
+        TrajectoryActionBuilder b_MoveToShootingPlace1 = b_MoveToCloseGate.endTrajectory().fresh()
+                .splineToSplineHeading(new Pose2d(obeliskScanPosition, Math.toRadians(-135 * isBlueValue)), Math.toRadians(135 * isBlueValue));
+
+        TrajectoryActionBuilder b_MoveToArtifact2 = b_MoveToShootingPlace1.endTrajectory().fresh()
                 .setTangent(0)
-                .splineToSplineHeading(new Pose2d(0, -42 * isBlueValue, Math.toRadians(90 * isBlueValue)), -(Math.PI/2.0) * isBlueValue);
+                .splineToSplineHeading(new Pose2d(12, -30 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90 * isBlueValue))
+                .splineTo(new Vector2d(12, -45 * isBlueValue), Math.toRadians(-90 * isBlueValue), new TranslationalVelConstraint(20));
 
+        TrajectoryActionBuilder b_MoveToShootingPlace2 = b_MoveToArtifact2
+                .splineToSplineHeading(new Pose2d(obeliskScanPosition, Math.toRadians(-135 * isBlueValue)), Math.toRadians(135 * isBlueValue));
 
-        Action MoveToScanObelisk = b_MoveToScanObelisk.build();
-        Action TurnToGoal = b_TurnToGoal.build();
-        Action MoveToArtifact1 = b_MoveToArtifact1.build();
-        Action MoveToShootingPlace = b_MoveToShootingPlace.build();
-        Action MoveToOutOfLine = b_MoveToOutOfLine.build();
 
         Motif[] motifHolder = new Motif[1];
-
         AutonomousActions actions = new AutonomousActions(robot);
+
+
+        Action MoveToScanObelisk = new ParallelAction(
+                new SequentialAction(
+                        b_MoveToScanObelisk.build(),
+                        new DeferredAction(() -> robot.getOrientRobotForShootAction())
+                ),
+                new SequentialAction(
+                        robot.getMotifFromObeliskAction(motifHolder, 2000),
+                        actions.getUpdateMotifAction(motifHolder)
+                ),
+                robot.getScanArtifactColorsAction()
+        );
+
+
+        Action MoveToArtifact1 = new SequentialAction(
+                new ParallelAction(
+                        b_MoveToArtifact1.build(),
+                        robot.getIntakeThreeAction(4)
+                ),
+                b_MoveToCloseGate.build()
+        );
+
+
+        Action MoveToShootingPlace1 = b_MoveToShootingPlace1.build();
+
+        Action MoveToArtifact2 = new ParallelAction(
+                b_MoveToArtifact2.build(),
+                robot.getIntakeThreeAction(4)
+        );
+
+        Action MoveToShootingPlace2 = b_MoveToShootingPlace2.build();
+
+
 
 
         Actions.runBlocking(
                 new SequentialAction(
                         new RaceAction(
-                            new SequentialAction(
-                                    new RaceAction(
-                                            new SequentialAction(
-                                                    new ParallelAction(
-                                                            MoveToScanObelisk,
-                                                            robot.getMotifFromObeliskAction(motifHolder, 4000)
-                                                    ),
-                                                    actions.getUpdateMotifAction(motifHolder),
-                                                    TurnToGoal
-                                            ),
-                                            robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal())
-                                    ),
+                                robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
+                                new SleepAction(26.5),
+                                new SequentialAction(
+                                        MoveToScanObelisk,
 
-                                    new RaceAction(
-                                            robot.drive.getHoldHeadingAction(robot),
-                                            robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
-                                            robot.getLaunchAllArtifactsAction()
-                                    ),
+                                        new RaceAction(
+                                                robot.getLaunchAllArtifactsAction(),
+                                                robot.drive.getHoldHeadingAction(robot)
+                                        ),
 
-                                    robot.getStopShooterAction(),
+                                        MoveToArtifact1,
+                                        MoveToShootingPlace1,
 
-                                    new ParallelAction(
-                                            robot.getIntakeThreeAction(4),
-                                            MoveToArtifact1
-                                    ),
+                                        new RaceAction(
+                                                robot.getLaunchAllArtifactsAction(),
+                                                robot.drive.getHoldHeadingAction(robot)
+                                        ),
 
-                                    new RaceAction(
-                                            new SequentialAction(
-                                                    MoveToShootingPlace,
+                                        MoveToArtifact2,
+                                        MoveToShootingPlace2,
 
-                                                    actions.getOrientRobotForShootAction()
-                                            ),
-                                            robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal())
-                                    ),
-
-
-                                    new RaceAction(
-                                        robot.drive.getHoldHeadingAction(robot),
-                                        robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
-                                        robot.getLaunchAllArtifactsAction()
-                                    )
-                            ),
-                            new SleepAction(26.5-opMode.getRuntime())
-                        ),
-                                new ParallelAction(
-                                        MoveToOutOfLine,
-                                        robot.getMoveFeedingServoAction(FeedingMechanism.FeedingServoPosition.DOWN),
-                                        robot.getStopShooterAction(),
-                                        robot.getStopIntakeAction()
+                                        new RaceAction(
+                                                robot.getLaunchAllArtifactsAction(),
+                                                robot.drive.getHoldHeadingAction(robot)
+                                        )
                                 )
+                        ),
+                        new ParallelAction(
+                                new DeferredAction(() -> drive.actionBuilder(drive.localizer.getPose()).splineTo(new Vector2d(-56, -24), Math.toRadians(180)).build()),
+                                robot.getStopShooterAction(),
+                                robot.getStopIntakeAction()
                         )
-
-                );
+                )
+        );
         while (opMode.opModeIsActive()) {
         }
 

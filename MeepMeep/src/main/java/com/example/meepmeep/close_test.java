@@ -19,21 +19,46 @@ public class close_test {
     RoadRunnerBotEntity myBot = new DefaultBotBuilder(meepMeep)
             .setColorScheme(isBlue ? new ColorSchemeBlueLight() : new ColorSchemeRedLight())
             // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
-            .setConstraints(60, 60, Math.toRadians(180), Math.toRadians(1.80), 15)
+            .setConstraints(60, 60, Math.PI, Math.PI, 15)
             .setDimensions(18,18)
             .build();
 
 
-    myBot.runAction(myBot.getDrive().actionBuilder(new Pose2d(-48, -48 * isBlueValue, Math.toRadians(90 * isBlueValue)))
-            .setTangent(0)
-            .splineToSplineHeading(new Pose2d(-12, -30 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90 * isBlueValue))
-            .splineTo(new Vector2d(-12, -55 * isBlueValue), Math.toRadians(-90 * isBlueValue), new TranslationalVelConstraint(10))
-            .waitSeconds(2)
-            .setTangent(Math.toRadians(90 * isBlueValue))
-            .splineToSplineHeading(new Pose2d(-30, -28 * isBlueValue, Math.toRadians(-135*isBlueValue)), Math.toRadians(180))
-            .waitSeconds(2)
-            .setTangent(0)
-            .splineToSplineHeading(new Pose2d(0, -48 * isBlueValue, Math.toRadians(90 * isBlueValue)), -(Math.PI/2.0) * isBlueValue)
+        Vector2d obeliskScanPosition = new Vector2d(-24, -18 * isBlueValue);
+
+        myBot.runAction(myBot.getDrive().actionBuilder(new Pose2d(-36, -52 * isBlueValue, Math.toRadians(90 * isBlueValue)))
+                // scan content, detect motif
+                .splineToSplineHeading(new Pose2d(obeliskScanPosition, Math.toRadians(150 * isBlueValue)), Math.toRadians(0)) // while doing this and the next action, spin up shooter, scan artifacts inside, and scan motif.
+                .turnTo(Math.toRadians(-135 * isBlueValue))
+                .setTangent(0)
+
+                // shooting and end of content scanning
+                .waitSeconds(3)
+
+                // intake next 3 artifacts
+                .splineToSplineHeading(new Pose2d(-12, -30 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90 * isBlueValue))
+                .splineTo(new Vector2d(-12, -45 * isBlueValue), Math.toRadians(-90 * isBlueValue), new TranslationalVelConstraint(20))
+
+                // open gate
+                .splineToSplineHeading(new Pose2d(-5, -52 * isBlueValue, Math.toRadians(90 * isBlueValue)), Math.toRadians(-45 * isBlueValue))
+                .strafeTo(new Vector2d(-5, -56))
+                .waitSeconds(2)
+
+                // shoot
+                .splineToSplineHeading(new Pose2d(obeliskScanPosition, Math.toRadians(-135 * isBlueValue)), Math.toRadians(135 * isBlueValue))
+                .waitSeconds(3)
+
+                // intake next 3 artifacts
+                .setTangent(0)
+                .splineToSplineHeading(new Pose2d(12, -30 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90 * isBlueValue))
+                .splineTo(new Vector2d(12, -45 * isBlueValue), Math.toRadians(-90 * isBlueValue), new TranslationalVelConstraint(20))
+
+                // shoot
+                .splineToSplineHeading(new Pose2d(obeliskScanPosition, Math.toRadians(-135 * isBlueValue)), Math.toRadians(135 * isBlueValue))
+                .waitSeconds(3)
+
+                // move for leave points
+                .splineTo(new Vector2d(-56, -24), Math.toRadians(180))
             .build());
 
     meepMeep.setBackground(MeepMeep.Background.FIELD_DECODE_JUICE_DARK)
