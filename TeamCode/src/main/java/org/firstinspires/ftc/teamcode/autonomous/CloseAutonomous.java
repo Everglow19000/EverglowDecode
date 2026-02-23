@@ -61,16 +61,6 @@ public class CloseAutonomous {
 
         KoalaLog.setup(opMode.hardwareMap);
 
-        double[] position = new double[3];
-
-        Actions.runBlocking(
-                new ParallelAction(
-//                        robot.getLocalizeWithApriltagAction(position, true),
-                        robot.getScanArtifactColorsAction()
-                )
-        );
-
-//        Pose2d startingPlace = new Pose2d(position[0], position[1], position[2]);
         Pose2d startingPlace = robot.drive.localizer.getPose();
 
         opMode.telemetry.addData("stored", robot.getFeedingMechanismContents());
@@ -90,7 +80,7 @@ public class CloseAutonomous {
         TrajectoryActionBuilder b_MoveToArtifact1 = b_MoveToScanObelisk.endTrajectory().fresh()
                 .setTangent(0)
                 .splineToSplineHeading(new Pose2d(-12, -30 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90 * isBlueValue))
-                .splineTo(new Vector2d(-12, -45 * isBlueValue), Math.toRadians(-90 * isBlueValue), new TranslationalVelConstraint(20));
+                .splineTo(new Vector2d(-12, -48 * isBlueValue), Math.toRadians(-90 * isBlueValue), new TranslationalVelConstraint(10));
 
         TrajectoryActionBuilder b_MoveToCloseGate = b_MoveToArtifact1
                 .splineToSplineHeading(new Pose2d(-5, -52 * isBlueValue, Math.toRadians(90 * isBlueValue)), Math.toRadians(-45 * isBlueValue))
@@ -103,7 +93,7 @@ public class CloseAutonomous {
         TrajectoryActionBuilder b_MoveToArtifact2 = b_MoveToShootingPlace1.endTrajectory().fresh()
                 .setTangent(0)
                 .splineToSplineHeading(new Pose2d(12, -30 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90 * isBlueValue))
-                .splineTo(new Vector2d(12, -45 * isBlueValue), Math.toRadians(-90 * isBlueValue), new TranslationalVelConstraint(20));
+                .splineTo(new Vector2d(12, -48 * isBlueValue), Math.toRadians(-90 * isBlueValue), new TranslationalVelConstraint(10));
 
         TrajectoryActionBuilder b_MoveToShootingPlace2 = b_MoveToArtifact2
                 .splineToSplineHeading(new Pose2d(obeliskScanPosition, Math.toRadians(-135 * isBlueValue)), Math.toRadians(135 * isBlueValue));
@@ -130,8 +120,8 @@ public class CloseAutonomous {
                 new ParallelAction(
                         b_MoveToArtifact1.build(),
                         robot.getIntakeThreeAction(4)
-                ),
-                b_MoveToCloseGate.build()
+                )
+//                b_MoveToCloseGate.build()
         );
 
 
@@ -184,7 +174,7 @@ public class CloseAutonomous {
                                 )
                         ),
                         new ParallelAction(
-                                new DeferredAction(() -> drive.actionBuilder(drive.localizer.getPose()).splineTo(new Vector2d(-56, -24), Math.toRadians(180)).build()),
+                                new DeferredAction(() -> drive.actionBuilder(drive.localizer.getPose()).splineTo(new Vector2d(-0, -36 * isBlueValue), Math.toRadians(180)).build()),
                                 robot.getStopShooterAction(),
                                 robot.getStopIntakeAction()
                         )
