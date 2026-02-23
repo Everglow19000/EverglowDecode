@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.hardwareMap;
-
 import androidx.annotation.NonNull;
 
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
@@ -13,7 +11,6 @@ import com.seattlesolvers.solverslib.hardware.motors.Motor;
 import com.seattlesolvers.solverslib.hardware.motors.MotorEx;
 import com.seattlesolvers.solverslib.util.InterpLUT;
 
-import org.firstinspires.ftc.teamcode.Localizer;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.everglow_library.Subsystem;
 import org.firstinspires.ftc.teamcode.everglow_library.Utils;
@@ -52,7 +49,8 @@ public class Shooter implements Subsystem {
     // | Flywheel Parameters |
     // -----------------------
     private boolean flywheelShouldSpin = false;
-    private static boolean isFlywheelInverted = true;
+    private static boolean isFlywheel1Inverted = true;
+    private static boolean isFlywheel2Inverted = false;
     private static InterpLUT flywheelSpeedsLUT = Utils.interpLUTFromArrays( //TODO: FILL ME WITH MEASURED VALUES
             LUTsDistances,
             new double[]{
@@ -89,7 +87,8 @@ public class Shooter implements Subsystem {
             robot.update();
             givenDistanceFromGoal = robot.calculateDistanceFromGoal();
             desiredFlywheelSpeed = getFlywheelTicksPerSecondForDistanceFromGoal(givenDistanceFromGoal);
-            flywheelMotor.set(flywheelPIDF.calculate(getFlywheelMotorCurrentTicksPerSecond(), desiredFlywheelSpeed));
+            flywheelMotor1.set(flywheel1PIDF.calculate(getFlywheelMotor1CurrentTicksPerSecond(), desiredFlywheelSpeed));
+            flywheelMotor2.set(flywheel2PIDF.calculate(getFlywheelMotor2CurrentTicksPerSecond(), desiredFlywheelSpeed));
 
             return true;
         }
@@ -121,19 +120,26 @@ public class Shooter implements Subsystem {
     }
 
 
-    MotorEx flywheelMotor;
+    MotorEx flywheelMotor1;
+    MotorEx flywheelMotor2;
     Servo hoodServo;
-    public PIDFController flywheelPIDF = new PIDFController(0.025, 0.2, 0, 0.0001);
+    public PIDFController flywheel1PIDF = new PIDFController(0.025, 0.2, 0, 0.0001);
+    public PIDFController flywheel2PIDF = new PIDFController(0.025, 0.2, 0, 0.0001);
     public double desiredFlywheelSpeed = 0; // [ticks/s]
     private double targetServoPosition = 0;
 
 
     public Shooter(HardwareMap hardwareMap, Robot robot) {
         this.robot = robot;
-        flywheelMotor = new MotorEx(hardwareMap, "flywheelMotor", Motor.GoBILDA.BARE);
+        flywheelMotor1 = new MotorEx(hardwareMap, "flywheelMotor", Motor.GoBILDA.BARE);
 
-        flywheelMotor.setInverted(isFlywheelInverted);
-        flywheelMotor.setRunMode(Motor.RunMode.RawPower);
+        flywheelMotor1.setInverted(isFlywheel1Inverted);
+        flywheelMotor1.setRunMode(Motor.RunMode.RawPower);
+
+        flywheelMotor2 = new MotorEx(hardwareMap, "flywheelMotor2", Motor.GoBILDA.BARE);
+
+        flywheelMotor2.setInverted(isFlywheel2Inverted);
+        flywheelMotor2.setRunMode(Motor.RunMode.RawPower);
 
         hoodServo = hardwareMap.get(Servo.class, "hoodServo");
 
@@ -164,16 +170,26 @@ public class Shooter implements Subsystem {
         return minServoAngle + (position*(maxServoAngle-minServoAngle));
     }
 
-    public double getFlywheelMotorCurrentRPM() {
-        return (flywheelMotor.getCorrectedVelocity()/flywheelMotor.getCPR())*60.0;
+    public double getFlywheelMotor1CurrentRPM() {
+        return (flywheelMotor1.getCorrectedVelocity()/flywheelMotor1.getCPR())*60.0;
+    }
+    public double getFlywheelMotor2CurrentRPM() {
+        return (flywheelMotor2.getCorrectedVelocity()/flywheelMotor2.getCPR())*60.0;
     }
 
-    public double getFlywheelPower() {
-        return flywheelMotor.get();
+    public double getFlywheel1Power() {
+        return flywheelMotor1.get();
+    }
+    public double getFlywheel2Power() {
+        return flywheelMotor2.get();
     }
 
-    public double getFlywheelMotorCurrentTicksPerSecond() {
-        return flywheelMotor.getCorrectedVelocity();
+    public double getFlywheelMotor1CurrentTicksPerSecond() {
+        return flywheelMotor1.getCorrectedVelocity();
+    }
+
+    public double getFlywheelMotor2CurrentTicksPerSecond() {
+        return flywheelMotor2.getCorrectedVelocity();
     }
 
     private double clampDistance(double distance) {
@@ -201,13 +217,14 @@ public class Shooter implements Subsystem {
     }
 
     public void stopMotor() {
-        flywheelMotor.stopMotor();
+        flywheelMotor1.stopMotor();
+        flywheelMotor2.stopMotor();
         flywheelShouldSpin = false;
         desiredFlywheelSpeed = 0;
     }
 
     public boolean isFlywheelFinishedSpinning() {
-        return Math.abs(flywheelMotor.getCorrectedVelocity() - desiredFlywheelSpeed) <= 50;
+        return Math.abs(flywheelMotor1.getCorrectedVelocity() - desiredFlywheelSpeed) <= 20 && Math.abs(flywheelMotor2.getCorrectedVelocity() - desiredFlywheelSpeed) <= 20;
     }
 
     public StopShooterSpinAction getStopShooterSpinAction() {
@@ -228,9 +245,15 @@ public class Shooter implements Subsystem {
     @Override
     public void update(int iterationCount) {
         if (flywheelShouldSpin) {
-            flywheelMotor.set(
-                    flywheelPIDF.calculate(
-                            getFlywheelMotorCurrentTicksPerSecond(),
+            flywheelMotor1.set(
+                    flywheel1PIDF.calculate(
+                            getFlywheelMotor1CurrentTicksPerSecond(),
+                            desiredFlywheelSpeed
+                    )
+            );
+            flywheelMotor2.set(
+                    flywheel2PIDF.calculate(
+                            getFlywheelMotor2CurrentTicksPerSecond(),
                             desiredFlywheelSpeed
                     )
             );

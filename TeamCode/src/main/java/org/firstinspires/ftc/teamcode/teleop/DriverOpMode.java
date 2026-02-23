@@ -119,17 +119,17 @@ public class DriverOpMode extends LinearOpMode {
 
             if (loggerGamepad.wasJustPressed(GamepadKeys.Button.CROSS)) {
                 KoalaLog.logPose2d("Shoot fail - undershoot - pose", robot.drive.localizer.getPose().position.x, robot.drive.localizer.getPose().position.y, robot.drive.localizer.getPose().heading.toDouble(), false);
-                KoalaLog.log("Shoot fail - undershoot - speed", robot.shooter.getFlywheelMotorCurrentTicksPerSecond(), false);
+                KoalaLog.log("Shoot fail - undershoot - speed", 0.5*(robot.shooter.getFlywheelMotor1CurrentTicksPerSecond() + robot.shooter.getFlywheelMotor2CurrentTicksPerSecond()), false);
                 KoalaLog.log("Shoot fail - undershoot - angle", robot.shooter.servoPositionToHoodDegrees(robot.shooter.getHoodServoPosition()), false);
             }
             else if (loggerGamepad.wasJustPressed(GamepadKeys.Button.SQUARE)) {
                 KoalaLog.logPose2d("Shoot fail - overshoot - pose", robot.drive.localizer.getPose().position.x, robot.drive.localizer.getPose().position.y, robot.drive.localizer.getPose().heading.toDouble(), false);
-                KoalaLog.log("Shoot fail - overshoot - speed", robot.shooter.getFlywheelMotorCurrentTicksPerSecond(), false);
+                KoalaLog.log("Shoot fail - overshoot - speed", 0.5*(robot.shooter.getFlywheelMotor1CurrentTicksPerSecond() + robot.shooter.getFlywheelMotor2CurrentTicksPerSecond()), false);
                 KoalaLog.log("Shoot fail - overshoot - angle", robot.shooter.servoPositionToHoodDegrees(robot.shooter.getHoodServoPosition()), false);
             }
             if (loggerGamepad.wasJustPressed(GamepadKeys.Button.CIRCLE)) {
                 KoalaLog.logPose2d("Shoot fail - incorrect heading - pose", robot.drive.localizer.getPose().position.x, robot.drive.localizer.getPose().position.y, robot.drive.localizer.getPose().heading.toDouble(), false);
-                KoalaLog.log("Shoot fail - incorrect heading - speed", robot.shooter.getFlywheelMotorCurrentTicksPerSecond(), false);
+                KoalaLog.log("Shoot fail - incorrect heading - speed", 0.5*(robot.shooter.getFlywheelMotor1CurrentTicksPerSecond() + robot.shooter.getFlywheelMotor2CurrentTicksPerSecond()), false);
                 KoalaLog.log("Shoot fail - incorrect heading - angle", robot.shooter.servoPositionToHoodDegrees(robot.shooter.getHoodServoPosition()), false);
             }
             if (loggerGamepad.wasJustPressed(GamepadKeys.Button.TRIANGLE)) {
