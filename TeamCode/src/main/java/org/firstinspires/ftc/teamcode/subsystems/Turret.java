@@ -100,6 +100,10 @@ public class Turret implements Subsystem  {
         return -9999999;
     }
 
+    public void setGlobalAngle(Rotation2d rotation, Rotation2d robotHeading) {
+        turretMotor.setTargetPosition(wantedAngleToTicks(globalRotationToLocal(rotation, robotHeading)));
+    }
+
     public static Rotation2d globalRotationToLocal(Rotation2d wantedRotation, Rotation2d robotHeading) {
         return wantedRotation.times(robotHeading.inverse());
     }
