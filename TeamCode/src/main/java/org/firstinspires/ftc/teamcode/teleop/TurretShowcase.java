@@ -9,12 +9,14 @@ import com.acmerobotics.roadrunner.ftc.LazyHardwareMapImu;
 import com.acmerobotics.roadrunner.ftc.LazyImu;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.Localizer;
 import org.firstinspires.ftc.teamcode.subsystems.Turret;
 
+@TeleOp(name="Turret Showcase")
 public class TurretShowcase extends LinearOpMode {
     public RevHubOrientationOnRobot.LogoFacingDirection logoFacingDirection =
             RevHubOrientationOnRobot.LogoFacingDirection.LEFT;
@@ -48,6 +50,7 @@ public class TurretShowcase extends LinearOpMode {
     Turret turret;
     IMULocalizer localizer;
     Rotation2d wantedGlobalTurretRotation = Rotation2d.exp(0);
+    Vector2d joystickVector = new Vector2d(0, 0);
     @Override
     public void runOpMode() throws InterruptedException {
         turret = new Turret(hardwareMap);
@@ -59,14 +62,17 @@ public class TurretShowcase extends LinearOpMode {
 
         while (opModeIsActive()) {
             if (gamepad1.right_bumper) {
-                wantedGlobalTurretRotation = new Rotation2d(gamepad1.right_stick_x, gamepad1.right_stick_x);
+                joystickVector = new Vector2d(gamepad1.right_stick_x, -gamepad1.right_stick_y);
+                Vector2d normalized = new Vector2d(joystickVector.x, joystickVector.y);
+                normalized.norm();
+                wantedGlobalTurretRotation = new Rotation2d(normalized.x, normalized.y);
             }
 
             turret.setGlobalAngle(wantedGlobalTurretRotation, localizer.getPose().heading);
 
-            telemetry.addData("right y", gamepad1.right_stick_y);
-            telemetry.addData("right x", gamepad1.right_stick_x);
-            telemetry.addData("global wanted turret rotation", wantedGlobalTurretRotation.toDouble());
+            telemetry.addData("x", joystickVector.x);
+            telemetry.addData("y", joystickVector.y);
+            telemetry.addData("global wanted rotation", wantedGlobalTurretRotation.toDouble());
             telemetry.update();
         }
     }
