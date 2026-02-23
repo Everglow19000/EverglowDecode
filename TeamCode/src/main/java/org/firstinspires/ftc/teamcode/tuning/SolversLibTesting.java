@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode.tuning;
 
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -8,6 +10,7 @@ import com.seattlesolvers.solverslib.gamepad.GamepadEx;
 import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
 import com.seattlesolvers.solverslib.hardware.motors.Motor;
 import com.seattlesolvers.solverslib.hardware.motors.MotorEx;
+import com.seattlesolvers.solverslib.hardware.motors.MotorGroup;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
@@ -15,26 +18,30 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 @Config
 public class SolversLibTesting extends LinearOpMode {
     MotorEx testMotor;
+    public static double motorPower = 0;
     @Override
     public void runOpMode() throws InterruptedException {
-        testMotor = new MotorEx(hardwareMap, "shooterMotor", Motor.GoBILDA.BARE);
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+        MotorEx flywheelMotor1 = new MotorEx(hardwareMap, "flywheelMotor", Motor.GoBILDA.BARE);
 
-        testMotor.setRunMode(Motor.RunMode.VelocityControl);
+        flywheelMotor1.setInverted(true);
+        flywheelMotor1.setRunMode(Motor.RunMode.RawPower);
+
+        MotorEx flywheelMotor2 = new MotorEx(hardwareMap, "flywheelMotor2", Motor.GoBILDA.BARE);
+
+        flywheelMotor2.setInverted(false);
+        flywheelMotor2.setRunMode(Motor.RunMode.RawPower);
 
         waitForStart();
 
         while (opModeIsActive()) {
-            if (gamepad1.left_bumper) {
-                testMotor.setVelocity(gamepad1.left_stick_y*36000, AngleUnit.DEGREES);
-            }
+            flywheelMotor1.set(motorPower);
+            flywheelMotor2.set(motorPower);
 
-            telemetry.addData("velocity P", testMotor.getVeloCoefficients()[0]);
-            telemetry.addData("velocity I", testMotor.getVeloCoefficients()[1]);
-            telemetry.addData("velocity D", testMotor.getVeloCoefficients()[2]);
-            telemetry.addData("feedforward s", testMotor.getFeedforwardCoefficients()[0]);
-            telemetry.addData("feedforward v", testMotor.getFeedforwardCoefficients()[1]);
-            telemetry.addData("feedforward a", testMotor.getFeedforwardCoefficients()[2]);
-            telemetry.addData("velocity in RPM", 100*(testMotor.getCorrectedVelocity()/testMotor.getCPR()));
+            telemetry.addData("motor1 speed", flywheelMotor1.getCorrectedVelocity());
+            telemetry.addData("motor2 speed", flywheelMotor2.getCorrectedVelocity());
+            telemetry.addData("motor1 pos", flywheelMotor1.getCurrentPosition());
+            telemetry.addData("motor2 pos", flywheelMotor2.getCurrentPosition());
             telemetry.update();
         }
     }

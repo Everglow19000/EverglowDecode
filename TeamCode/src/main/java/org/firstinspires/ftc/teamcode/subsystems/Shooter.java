@@ -28,10 +28,10 @@ public class Shooter implements Subsystem {
     // --------------------
     // | Servo Parameters |
     // --------------------
-    public static double minServoPosition = 0.43;
-    public static double maxServoPosition = 0.645;
-    public static double minServoAngle = 4.95;
-    public static double maxServoAngle = 43.8;
+    public static double minServoPosition = 0.51;
+    public static double maxServoPosition = 0.71;
+    public static double minServoAngle = 3.0;
+    public static double maxServoAngle = 42.5;
     private static Servo.Direction servoDirection = Servo.Direction.REVERSE;
     private static InterpLUT servoAnglesLUT = Utils.interpLUTFromArrays( //TODO: FILL ME WITH MEASURED VALUES
             LUTsDistances,
@@ -84,11 +84,10 @@ public class Shooter implements Subsystem {
 
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-            robot.update();
             givenDistanceFromGoal = robot.calculateDistanceFromGoal();
             desiredFlywheelSpeed = getFlywheelTicksPerSecondForDistanceFromGoal(givenDistanceFromGoal);
-            flywheelMotor1.set(flywheel1PIDF.calculate(getFlywheelMotor1CurrentTicksPerSecond(), desiredFlywheelSpeed));
-            flywheelMotor2.set(flywheel2PIDF.calculate(getFlywheelMotor2CurrentTicksPerSecond(), desiredFlywheelSpeed));
+            flywheelShouldSpin = true;
+            robot.update();
 
             return true;
         }
@@ -123,8 +122,7 @@ public class Shooter implements Subsystem {
     MotorEx flywheelMotor1;
     MotorEx flywheelMotor2;
     Servo hoodServo;
-    public PIDFController flywheel1PIDF = new PIDFController(0.025, 0.2, 0, 0.0001);
-    public PIDFController flywheel2PIDF = new PIDFController(0.025, 0.2, 0, 0.0001);
+    public PIDFController flywheelPIDF = new PIDFController(0.025, 0.2, 0, 0.0001);
     public double desiredFlywheelSpeed = 0; // [ticks/s]
     private double targetServoPosition = 0;
 
@@ -170,11 +168,8 @@ public class Shooter implements Subsystem {
         return minServoAngle + (position*(maxServoAngle-minServoAngle));
     }
 
-    public double getFlywheelMotor1CurrentRPM() {
+    public double getFlywheelCurrentRPM() {
         return (flywheelMotor1.getCorrectedVelocity()/flywheelMotor1.getCPR())*60.0;
-    }
-    public double getFlywheelMotor2CurrentRPM() {
-        return (flywheelMotor2.getCorrectedVelocity()/flywheelMotor2.getCPR())*60.0;
     }
 
     public double getFlywheel1Power() {
@@ -184,12 +179,8 @@ public class Shooter implements Subsystem {
         return flywheelMotor2.get();
     }
 
-    public double getFlywheelMotor1CurrentTicksPerSecond() {
+    public double getFlywheelMotorCurrentTicksPerSecond() {
         return flywheelMotor1.getCorrectedVelocity();
-    }
-
-    public double getFlywheelMotor2CurrentTicksPerSecond() {
-        return flywheelMotor2.getCorrectedVelocity();
     }
 
     private double clampDistance(double distance) {
@@ -224,7 +215,7 @@ public class Shooter implements Subsystem {
     }
 
     public boolean isFlywheelFinishedSpinning() {
-        return Math.abs(flywheelMotor1.getCorrectedVelocity() - desiredFlywheelSpeed) <= 20 && Math.abs(flywheelMotor2.getCorrectedVelocity() - desiredFlywheelSpeed) <= 20;
+        return Math.abs(flywheelMotor1.getCorrectedVelocity() - desiredFlywheelSpeed) <= 20;
     }
 
     public StopShooterSpinAction getStopShooterSpinAction() {
@@ -245,18 +236,12 @@ public class Shooter implements Subsystem {
     @Override
     public void update(int iterationCount) {
         if (flywheelShouldSpin) {
-            flywheelMotor1.set(
-                    flywheel1PIDF.calculate(
-                            getFlywheelMotor1CurrentTicksPerSecond(),
-                            desiredFlywheelSpeed
-                    )
+            double calculatedPower = flywheelPIDF.calculate(
+                    getFlywheelMotorCurrentTicksPerSecond(),
+                    desiredFlywheelSpeed
             );
-            flywheelMotor2.set(
-                    flywheel2PIDF.calculate(
-                            getFlywheelMotor2CurrentTicksPerSecond(),
-                            desiredFlywheelSpeed
-                    )
-            );
+            flywheelMotor1.set(calculatedPower);
+            flywheelMotor2.set(calculatedPower);
         }
     }
 
