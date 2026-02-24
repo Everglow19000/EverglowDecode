@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.teleop;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.Rotation2d;
@@ -16,7 +17,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.Localizer;
 import org.firstinspires.ftc.teamcode.subsystems.Turret;
 
-@TeleOp(name="Turret Showcase")
+@TeleOp(name="Turret Showcase", group="Driving")
+@Config
 public class TurretShowcase extends LinearOpMode {
     public RevHubOrientationOnRobot.LogoFacingDirection logoFacingDirection =
             RevHubOrientationOnRobot.LogoFacingDirection.LEFT;
@@ -25,7 +27,7 @@ public class TurretShowcase extends LinearOpMode {
     class IMULocalizer implements Localizer {
         public final LazyImu lazyImu;
 
-        Rotation2d yawOffset;
+        Rotation2d yawOffset = Rotation2d.exp(0);
 
         public IMULocalizer(HardwareMap hardwareMap) {
             lazyImu = new LazyHardwareMapImu(hardwareMap, "imu", new RevHubOrientationOnRobot(
@@ -51,28 +53,47 @@ public class TurretShowcase extends LinearOpMode {
     IMULocalizer localizer;
     Rotation2d wantedGlobalTurretRotation = Rotation2d.exp(0);
     Vector2d joystickVector = new Vector2d(0, 0);
+    public static boolean manual = true;
+    public static int motorTicksWanted = 0;
     @Override
     public void runOpMode() throws InterruptedException {
         turret = new Turret(hardwareMap);
         localizer = new IMULocalizer(hardwareMap);
+
+        boolean circleFlag = false;
 
         waitForStart();
 
         Actions.runBlocking(turret.getHomeTurretAction());
 
         while (opModeIsActive()) {
-            if (gamepad1.right_bumper) {
-                joystickVector = new Vector2d(gamepad1.right_stick_x, -gamepad1.right_stick_y);
-                Vector2d normalized = new Vector2d(joystickVector.x, joystickVector.y);
-                normalized.norm();
-                wantedGlobalTurretRotation = new Rotation2d(normalized.x, normalized.y);
+            if (gamepad1.circle && !circleFlag) {
+                manual = true;
             }
+            circleFlag = gamepad1.circle;
 
-            turret.setGlobalAngle(wantedGlobalTurretRotation, localizer.getPose().heading);
+            if (manual) {
+                if (gamepad1.right_bumper) {
+                    joystickVector = new Vector2d(gamepad1.right_stick_x, -gamepad1.right_stick_y);
+                    Vector2d normalized = new Vector2d(joystickVector.x, joystickVector.y);
+                    normalized.norm();
+                    wantedGlobalTurretRotation = new Rotation2d(normalized.x, normalized.y);
+                }
 
-            telemetry.addData("x", joystickVector.x);
-            telemetry.addData("y", joystickVector.y);
-            telemetry.addData("global wanted rotation", wantedGlobalTurretRotation.toDouble());
+                turret.setGlobalAngle(wantedGlobalTurretRotation, localizer.getPose().heading);
+
+                telemetry.addData("x", joystickVector.x);
+                telemetry.addData("y", joystickVector.y);
+                if (wantedGlobalTurretRotation != null) {
+                    telemetry.addData("global wanted rotation", wantedGlobalTurretRotation.toDouble());
+                }
+                else {
+                    telemetry.addLine("rotation is null!");
+                }
+            }
+            else {
+                turret.turretMotor.setTargetPosition(motorTicksWanted);
+            }
             telemetry.update();
         }
     }
