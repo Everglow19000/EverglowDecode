@@ -109,7 +109,8 @@ public class Shooter implements Subsystem {
     }
 
     public class WaitUntilShooterSpinupAction implements Action {
-        private WaitUntilShooterSpinupAction() {
+        private
+        WaitUntilShooterSpinupAction() {
         }
 
         @Override

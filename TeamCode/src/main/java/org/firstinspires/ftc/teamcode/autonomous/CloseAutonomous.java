@@ -79,8 +79,8 @@ public class CloseAutonomous {
 
         TrajectoryActionBuilder b_MoveToArtifact1 = b_MoveToScanObelisk.endTrajectory().fresh()
                 .setTangent(0)
-                .splineToSplineHeading(new Pose2d(-12, -30 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90 * isBlueValue))
-                .splineTo(new Vector2d(-12, -48 * isBlueValue), Math.toRadians(-90 * isBlueValue), new TranslationalVelConstraint(10));
+                .splineToSplineHeading(new Pose2d(-11, -30 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90 * isBlueValue))
+                .splineTo(new Vector2d(-11, -50 * isBlueValue), Math.toRadians(-90 * isBlueValue), new TranslationalVelConstraint(7));
 
         TrajectoryActionBuilder b_MoveToCloseGate = b_MoveToArtifact1
                 .splineToSplineHeading(new Pose2d(-5, -52 * isBlueValue, Math.toRadians(90 * isBlueValue)), Math.toRadians(-45 * isBlueValue))
@@ -93,7 +93,7 @@ public class CloseAutonomous {
         TrajectoryActionBuilder b_MoveToArtifact2 = b_MoveToShootingPlace1.endTrajectory().fresh()
                 .setTangent(0)
                 .splineToSplineHeading(new Pose2d(12, -30 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90 * isBlueValue))
-                .splineTo(new Vector2d(12, -48 * isBlueValue), Math.toRadians(-90 * isBlueValue), new TranslationalVelConstraint(10));
+                .splineTo(new Vector2d(12, -50 * isBlueValue), Math.toRadians(-90 * isBlueValue), new TranslationalVelConstraint(7));
 
         TrajectoryActionBuilder b_MoveToShootingPlace2 = b_MoveToArtifact2
                 .splineToSplineHeading(new Pose2d(obeliskScanPosition, Math.toRadians(-135 * isBlueValue)), Math.toRadians(135 * isBlueValue));
@@ -119,7 +119,7 @@ public class CloseAutonomous {
         Action MoveToArtifact1 = new SequentialAction(
                 new ParallelAction(
                         b_MoveToArtifact1.build(),
-                        robot.getIntakeThreeAction(4)
+                        robot.getIntakeThreeAction(4.5)
                 )
 //                b_MoveToCloseGate.build()
         );
@@ -132,7 +132,7 @@ public class CloseAutonomous {
 
         Action MoveToArtifact2 = new ParallelAction(
                 b_MoveToArtifact2.build(),
-                robot.getIntakeThreeAction(4)
+                robot.getIntakeThreeAction(4.5)
         );
 
         Action MoveToShootingPlace2 = new SequentialAction(

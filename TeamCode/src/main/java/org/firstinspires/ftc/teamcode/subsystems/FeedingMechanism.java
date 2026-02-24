@@ -385,13 +385,15 @@ public class FeedingMechanism implements Subsystem {
 
     // defines artifact object using lastColor and puts it in the thing\
 
-    private ArtifactColor matchColor(NormalizedRGBA color) {
-        double[] lastColorArray = ArtifactColor.NormalizedRGBAToArray(color);
-        if (Utils.areNormalizedRGBArraysSimilar(lastColorArray, ArtifactColor.GREEN.color)) {
+    private ArtifactColor matchColor(NormalizedRGBA rgba) {
+        double[] lastColorArray = ArtifactColor.NormalizedRGBAToArray(rgba);
+        double greenDistance = Utils.getDistanceOf3dVectors(lastColorArray, Utils.normalizeArray(ArtifactColor.GREEN.color, true));
+        double purpleDistance = Utils.getDistanceOf3dVectors(lastColorArray, Utils.normalizeArray(ArtifactColor.PURPLE.color, true));
+        if (Utils.areNormalizedRGBArraysSimilar(lastColorArray, Utils.normalizeArray(ArtifactColor.GREEN.color, true)) && greenDistance < purpleDistance) {
             return ArtifactColor.GREEN;
         }
 
-        if (Utils.areNormalizedRGBArraysSimilar(lastColorArray, ArtifactColor.PURPLE.color)) {
+        if (Utils.areNormalizedRGBArraysSimilar(lastColorArray, Utils.normalizeArray(ArtifactColor.PURPLE.color, true)) && purpleDistance < greenDistance) {
             return ArtifactColor.PURPLE;
         }
 
@@ -480,6 +482,9 @@ public class FeedingMechanism implements Subsystem {
     public SpindexerPosition[] getShootingSequence() {
         SpindexerPosition[] result = new SpindexerPosition[countArtifactsInSpindexer()];
 
+        Log.i("FeedingMechanism", "stored: " + getStoredArtifacts());
+        Log.i("FeedingMechanism", "motif: " + motif);
+
         if (motif == Motif.NONE || motif == null) {
             SpindexerPosition currIndexStored;
             if (targetSpindexerPosition == SpindexerPosition.SHOOT_INDEX_0 || targetSpindexerPosition == SpindexerPosition.SHOOT_INDEX_1 || targetSpindexerPosition == SpindexerPosition.SHOOT_INDEX_2) {
@@ -499,10 +504,8 @@ public class FeedingMechanism implements Subsystem {
         else {
             int[] purpleArtifactPositions = getArtifactColorPositions(ArtifactColor.PURPLE);
             int[] greenArtifactPositions = getArtifactColorPositions(ArtifactColor.GREEN);
-            Log.i("FeedingMechanism", "stored: " + getStoredArtifacts());
             Log.i("FeedingMechanism", "purplePositions: " + Arrays.toString(purpleArtifactPositions));
             Log.i("FeedingMechanism", "greenPositions: " + Arrays.toString(greenArtifactPositions));
-            Log.i("FeedingMechanism", "motif: " + motif);
             if (motif == Motif.GPP) {
                 int purpleIndex = 0;
                 int greenIndex = 0;
