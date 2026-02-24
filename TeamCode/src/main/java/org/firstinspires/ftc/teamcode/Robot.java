@@ -136,6 +136,14 @@ public class Robot extends RobotBase {
         if (feedingMechanism.isNowStoppedIntaking()) {
             stopIntake();
         }
+        if (feedingMechanism.isIntaking()) {
+            if (!feedingMechanism.isSpindexerInPosition()) {
+                intake.stopIntake();
+            }
+            else {
+                intake.startIntake();
+            }
+        }
     }
     public Action getOrientRobotForShootAction() {
         return drive.actionBuilder(drive.localizer.getPose())
