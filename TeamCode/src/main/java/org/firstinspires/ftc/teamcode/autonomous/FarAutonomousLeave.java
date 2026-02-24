@@ -66,6 +66,7 @@ public class FarAutonomousLeave {
                 new SequentialAction(
                         new RaceAction(
                                 robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
+                                new SleepAction(26.5),
                                 new SequentialAction(
                                         new ParallelAction(
                                                 new SequentialAction(
@@ -84,7 +85,7 @@ public class FarAutonomousLeave {
                                 )
                         ),
                         robot.getStopShooterAction(),
-                        new DeferredAction(() -> drive.actionBuilder(drive.localizer.getPose()).strafeTo(new Vector2d(63, -32 * isBlueValue)).build()),
+                        new DeferredAction(() -> drive.actionBuilder(drive.localizer.getPose()).strafeTo(new Vector2d(48, -32 * isBlueValue)).build()),
                         drive.getStopMovingAction()
                 )
         );
