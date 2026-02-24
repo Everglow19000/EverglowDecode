@@ -182,14 +182,14 @@ public class DriverOpMode extends LinearOpMode {
                         robot.getStopShooterAction()
                 );
             }
-            else if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.SQUARE)) {
-                driveAvailable = false;
-                currentRumble = endCameraActionRumble;
-                currentAction = new SequentialAction(
-                        robot.getLocalizeWithApriltagAction(position, false),
-                        new UpdateRobotPoseAction(robot, position)
-                );
-            }
+//            else if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.SQUARE)) {
+//                driveAvailable = false;
+//                currentRumble = endCameraActionRumble;
+//                currentAction = new SequentialAction(
+//                        robot.getLocalizeWithApriltagAction(position, false),
+//                        new UpdateRobotPoseAction(robot, position)
+//                );
+//            }
             else if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.TRIANGLE)) {
                 spindexerAvailable = false;
                 currentRumble = endSpindexerActionRumble;

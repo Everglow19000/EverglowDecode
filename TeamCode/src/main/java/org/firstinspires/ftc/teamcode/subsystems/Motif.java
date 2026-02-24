@@ -16,13 +16,13 @@ public enum Motif {
 
     public Motif getNext() {
         if (this == GPP) {
-            return PGP;
-        }
-        else if (this == PGP) {
             return PPG;
         }
-        else if (this == PPG) {
+        else if (this == PGP) {
             return GPP;
+        }
+        else if (this == PPG) {
+            return PGP;
         }
         return this;
     }
