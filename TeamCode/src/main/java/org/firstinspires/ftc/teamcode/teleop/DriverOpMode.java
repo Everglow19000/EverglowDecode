@@ -133,21 +133,12 @@ public class DriverOpMode extends LinearOpMode {
                 KoalaLog.log("Shoot succeed", "yay", false);
             }
 
-            if (robot.feedingMechanism.isIntaking()) {
-                if (!robot.feedingMechanism.isSpindexerInPosition()) {
-                    robot.intake.stopIntake();
-                }
-                else {
-                    robot.intake.startIntake();
-                }
-            }
-
             if (robot.feedingMechanism.isNowStoppedIntaking()) {
                 gamepad.gamepad.runRumbleEffect(endSpindexerActionRumble);
                 shouldSpinUpShooter = true;
             }
 
-            if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)) {
+            if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.CROSS)) {
                 driveAvailable = false;
                 spindexerAvailable = false;
                 shooterAvailable = false;
@@ -168,7 +159,7 @@ public class DriverOpMode extends LinearOpMode {
                 );
             }
 
-            else if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.CROSS)) {
+            else if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)) {
                 driveAvailable = false;
                 spindexerAvailable = false;
                 shooterAvailable = false;
@@ -207,8 +198,11 @@ public class DriverOpMode extends LinearOpMode {
                 robot.stopIntake();
             }
 
-            if (!robot.isIntaking() && gamepad.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER) > 0.6) {
+            if (!robot.feedingMechanism.isIntaking() && gamepad.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER) > 0.6) {
                 robot.reverseIntake();
+                if (!robot.feedingMechanism.isSpindexerInPosition()) {
+                    robot.feedingMechanism.setSpindexerPosition(robot.feedingMechanism.getLastTargetSpindexerPosition());
+                }
             }
             if (!robot.isIntaking() && gamepad.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER) <= 0.6) {
                 robot.stopIntake();

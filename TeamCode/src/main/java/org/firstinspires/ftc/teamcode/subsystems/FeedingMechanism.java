@@ -235,6 +235,7 @@ public class FeedingMechanism implements Subsystem {
     RevColorSensorV3 colorSensor1;
     RevColorSensorV3 colorSensor2;
     SpindexerPosition targetSpindexerPosition;
+    SpindexerPosition lastTargetSpindexerPosition = null;
     FeedingServoPosition currentFeedingServoPosition;
     Motif motif;
     ArtifactColor[] storedArtifacts = new ArtifactColor[3];
@@ -417,8 +418,11 @@ public class FeedingMechanism implements Subsystem {
         return false;
     }
     public void setSpindexerPosition(SpindexerPosition position) {
-        targetSpindexerPosition = position;
-        spindexerServo.setPosition(position.position);
+        if (position != targetSpindexerPosition) {
+            lastTargetSpindexerPosition = targetSpindexerPosition;
+            targetSpindexerPosition = position;
+            spindexerServo.setPosition(position.position);
+        }
     }
     public void setFeedingServoPosition(FeedingServoPosition position) {
         currentFeedingServoPosition = position;
@@ -445,6 +449,10 @@ public class FeedingMechanism implements Subsystem {
 
     public boolean isFeedingServoInPosition() {
         return Math.abs(getScaledFeedingEncoderPosition() - currentFeedingServoPosition.position) <= spindexerEncoderTolerance;
+    }
+
+    public SpindexerPosition getLastTargetSpindexerPosition() {
+        return lastTargetSpindexerPosition;
     }
 
     private int countArtifactsInSpindexer() {
