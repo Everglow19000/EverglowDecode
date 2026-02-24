@@ -80,7 +80,8 @@ public class CloseAutonomous {
         TrajectoryActionBuilder b_MoveToArtifact1 = b_MoveToScanObelisk.endTrajectory().fresh()
                 .setTangent(0)
                 .splineToSplineHeading(new Pose2d(-11, -30 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90 * isBlueValue))
-                .splineTo(new Vector2d(-11, -50 * isBlueValue), Math.toRadians(-90 * isBlueValue), new TranslationalVelConstraint(7));
+                .splineTo(new Vector2d(-11, -50 * isBlueValue), Math.toRadians(-90 * isBlueValue), new TranslationalVelConstraint(12))
+                .strafeTo(new Vector2d(-18, -53), new TranslationalVelConstraint(20));
 
         TrajectoryActionBuilder b_MoveToCloseGate = b_MoveToArtifact1
                 .splineToSplineHeading(new Pose2d(-5, -52 * isBlueValue, Math.toRadians(90 * isBlueValue)), Math.toRadians(-45 * isBlueValue))
@@ -88,6 +89,7 @@ public class CloseAutonomous {
                 .waitSeconds(1);
 
         TrajectoryActionBuilder b_MoveToShootingPlace1 = b_MoveToCloseGate.endTrajectory().fresh()
+                .setTangent(Math.PI/2)
                 .splineToSplineHeading(new Pose2d(obeliskScanPosition, Math.toRadians(-135 * isBlueValue)), Math.toRadians(135 * isBlueValue));
 
         TrajectoryActionBuilder b_MoveToArtifact2 = b_MoveToShootingPlace1.endTrajectory().fresh()
@@ -119,7 +121,7 @@ public class CloseAutonomous {
         Action MoveToArtifact1 = new SequentialAction(
                 new ParallelAction(
                         b_MoveToArtifact1.build(),
-                        robot.getIntakeThreeAction(4.5)
+                        robot.getIntakeThreeAction(5.5)
                 )
 //                b_MoveToCloseGate.build()
         );
@@ -176,7 +178,8 @@ public class CloseAutonomous {
                         new ParallelAction(
                                 new DeferredAction(() -> drive.actionBuilder(drive.localizer.getPose()).splineTo(new Vector2d(-0, -36 * isBlueValue), Math.toRadians(180)).build()),
                                 robot.getStopShooterAction(),
-                                robot.getStopIntakeAction()
+                                robot.getStopIntakeAction(),
+                                robot.getMoveFeedingServoAction(FeedingMechanism.FeedingServoPosition.DOWN)
                         )
                 )
         );

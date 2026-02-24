@@ -20,6 +20,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.MecanumDrive;
 import org.firstinspires.ftc.teamcode.Robot;
+import org.firstinspires.ftc.teamcode.everglow_library.DeferredAction;
 import org.firstinspires.ftc.teamcode.subsystems.Motif;
 
 import Ori.Coval.Logging.Logger.KoalaLog;
@@ -32,7 +33,7 @@ public class FarAutonomousLeave {
         this.opMode = opMode;
         this.isBlue = isBlue;
     }
-    public void runOpMode() throws InterruptedException {
+    public void run() throws InterruptedException {
         blackboard.put("isBlue", isBlue);
         int isBlueValue = isBlue ? 1 : -1;
 
@@ -40,7 +41,7 @@ public class FarAutonomousLeave {
         opMode.telemetry = new MultipleTelemetry(opMode.telemetry, FtcDashboard.getInstance().getTelemetry());
 
 
-        robot.drive.localizer.setPose(new Pose2d(-66, -20 * isBlueValue, Math.toRadians(180)));
+        robot.drive.localizer.setPose(new Pose2d(66, -20 * isBlueValue, Math.toRadians(180)));
 
         opMode.waitForStart();
 
@@ -48,27 +49,49 @@ public class FarAutonomousLeave {
 
         MecanumDrive drive = robot.drive;
 
+//        TrajectoryActionBuilder b_MoveForwardABit =
+//                .strafeTo(new Vector2d(63, -21 * isBlueValue));
 
-        TrajectoryActionBuilder b_MoveToOutOfLine = drive.actionBuilder(drive.localizer.getPose())
-                .strafeTo(new Vector2d(-60, -48 * isBlueValue));
+//        TrajectoryActionBuilder b_MoveToOutOfLine = ;
 
 
-        Action MoveToOutOfLine = b_MoveToOutOfLine.build();
+//        Action MoveForwardABit = b_MoveForwardABit.build();
+
+//        Action MoveToOutOfLine = b_MoveToOutOfLine.build();
 
         AutonomousActions actions = new AutonomousActions(robot);
 
         opMode.waitForStart();
         Actions.runBlocking(
                 new SequentialAction(
-                        new ParallelAction(
-                                MoveToOutOfLine,
-                                robot.getMotifFromObeliskAction(motifWrapper)
+                        new RaceAction(
+                                robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
+                                new SequentialAction(
+                                        new ParallelAction(
+                                                new SequentialAction(
+                                                        robot.getMotifFromObeliskAction(motifWrapper),
+                                                        actions.getUpdateMotifAction(motifWrapper),
+//                                                        MoveForwardABit,
+                                                        new DeferredAction(() -> robot.getOrientRobotForShootAction())
+                                                ),
+                                                robot.getScanArtifactColorsAction()
+                                        ),
+                                        new RaceAction(
+                                                robot.getLaunchAllArtifactsAction(),
+                                                robot.drive.getHoldHeadingAction(robot)
+                                        ),
+                                        drive.getStopMovingAction()
+                                )
                         ),
-                        actions.getUpdateMotifAction(motifWrapper)
+                        robot.getStopShooterAction(),
+                        new DeferredAction(() -> drive.actionBuilder(drive.localizer.getPose()).strafeTo(new Vector2d(63, -32 * isBlueValue)).build()),
+                        drive.getStopMovingAction()
                 )
         );
         while (opMode.opModeIsActive()) {
         }
+
+        robot.calculateDrivePowers(opMode.gamepad1);
 
         robot.setEndPose(drive.localizer.getPose());
     }

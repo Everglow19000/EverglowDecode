@@ -85,6 +85,15 @@ public class DriverOpMode extends LinearOpMode {
         double[] position = new double[3];
         Motif[] motifs = new Motif[1];
 
+        int spindexerPosesIndex = 0;
+        FeedingMechanism.SpindexerPosition[] positions = new FeedingMechanism.SpindexerPosition[6];
+        positions[0] = FeedingMechanism.SpindexerPosition.INTAKE_INDEX_0;
+        positions[1] = FeedingMechanism.SpindexerPosition.INTAKE_INDEX_1;
+        positions[2] = FeedingMechanism.SpindexerPosition.INTAKE_INDEX_2;
+        positions[3] = FeedingMechanism.SpindexerPosition.SHOOT_INDEX_0;
+        positions[4] = FeedingMechanism.SpindexerPosition.SHOOT_INDEX_1;
+        positions[5] = FeedingMechanism.SpindexerPosition.SHOOT_INDEX_2;
+
         motifs[0] = Robot.currentMotif;
 
         GamepadEx gamepad = new GamepadEx(gamepad1);
@@ -181,10 +190,6 @@ public class DriverOpMode extends LinearOpMode {
                         new UpdateRobotPoseAction(robot, position)
                 );
             }
-            else if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.DPAD_UP)) {
-                currentRumble = endCameraActionRumble;
-                currentAction = robot.getMotifFromObeliskAction(motifs);
-            }
             else if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.TRIANGLE)) {
                 spindexerAvailable = false;
                 currentRumble = endSpindexerActionRumble;
@@ -193,12 +198,15 @@ public class DriverOpMode extends LinearOpMode {
 
             if (currentAction == null && spindexerAvailable && gamepad.isDown(GamepadKeys.Button.RIGHT_BUMPER)) {
                 robot.startIntake();
+                spindexerAvailable = false;
             }
             else {
                 robot.stopIntake();
+                spindexerAvailable = true;
             }
 
             if (!robot.feedingMechanism.isIntaking() && gamepad.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER) > 0.6) {
+                spindexerAvailable = false;
                 robot.reverseIntake();
                 if (!robot.feedingMechanism.isSpindexerInPosition()) {
                     robot.feedingMechanism.setSpindexerPosition(robot.feedingMechanism.getLastTargetSpindexerPosition());
@@ -206,14 +214,28 @@ public class DriverOpMode extends LinearOpMode {
             }
             if (!robot.isIntaking() && gamepad.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER) <= 0.6) {
                 robot.stopIntake();
+                spindexerAvailable = true;
             }
 
             if (gamepad.wasJustPressed(GamepadKeys.Button.LEFT_BUMPER)) {
                 shouldSpinUpShooter = !shouldSpinUpShooter;
             }
 
-            if (gamepad.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT)) {
+            if (gamepad.wasJustPressed(GamepadKeys.Button.DPAD_UP)) {
                 robot.setMotif(Robot.currentMotif.getNext());
+            }
+
+            if (spindexerAvailable && gamepad.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT)) {
+                spindexerPosesIndex++;
+                spindexerPosesIndex = spindexerPosesIndex%positions.length;
+                robot.setSpindexerPosition(positions[spindexerPosesIndex]);
+            }
+            else if (spindexerAvailable && gamepad.wasJustPressed(GamepadKeys.Button.DPAD_LEFT)) {
+                spindexerPosesIndex--;
+                if (spindexerPosesIndex < 0) {
+                    spindexerPosesIndex = positions.length-1;
+                }
+                robot.setSpindexerPosition(positions[spindexerPosesIndex]);
             }
 
             if (driveAvailable) {
@@ -253,14 +275,9 @@ public class DriverOpMode extends LinearOpMode {
                 robot.stopShooterMotor();
             }
 
-            Vector2d diff = robot.goalPoseOrientation.minus(robot.drive.localizer.getPose().position);
-
             telemetry.addData("current motif", Robot.currentMotif);
-            telemetry.addData("desired angle", Math.atan2(diff.y, diff.x));
-            telemetry.addData("feeding mechanism intaking", robot.feedingMechanism.isIntaking());
             telemetry.addData("contents", robot.getFeedingMechanismContents());
-            telemetry.addData("position", robot.drive.localizer.getPose().position);
-            telemetry.addData("heading", robot.drive.localizer.getPose().heading.toDouble());
+            telemetry.addData("spindexer target position", robot.feedingMechanism.getTargetSpindexerPosition());
             telemetry.update();
         }
     }

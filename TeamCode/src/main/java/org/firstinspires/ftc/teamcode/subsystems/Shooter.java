@@ -18,11 +18,15 @@ import org.firstinspires.ftc.teamcode.everglow_library.Utils;
 public class Shooter implements Subsystem {
     Robot robot;
     private static double[] LUTsDistances = new double[] {
-            15,
-            45,
-            75,
-            110,
-            135
+            13.8,
+            28.4,
+            48,
+            55,
+            61,
+            70,
+            85,
+            118.9,
+            149.4
     };
 
     // --------------------
@@ -40,7 +44,11 @@ public class Shooter implements Subsystem {
                     30,
                     38,
                     38,
-                    45
+                    39,
+                    41.5,
+                    41.5,
+                    42.5,
+                    44.5
             }
     );
 
@@ -54,11 +62,15 @@ public class Shooter implements Subsystem {
     private static InterpLUT flywheelSpeedsLUT = Utils.interpLUTFromArrays( //TODO: FILL ME WITH MEASURED VALUES
             LUTsDistances,
             new double[]{
+                    1020,
+                    1040,
+                    1180,
+                    1200,
                     1220,
-                    1280,
-                    1420,
-                    1540,
-                    1680
+                    1220,
+                    1260,
+                    1460,
+                    1580
             }
     );
 

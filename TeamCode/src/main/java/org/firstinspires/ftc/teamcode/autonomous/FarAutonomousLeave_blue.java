@@ -10,7 +10,7 @@ public class FarAutonomousLeave_blue extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-        FarAutonomous autonomous = new FarAutonomous(this, true);
+        FarAutonomousLeave autonomous = new FarAutonomousLeave(this, true);
         autonomous.run();
     }
 }

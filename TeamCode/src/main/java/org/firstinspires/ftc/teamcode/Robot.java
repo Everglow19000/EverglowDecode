@@ -25,6 +25,18 @@ import org.firstinspires.ftc.teamcode.subsystems.Motif;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 
 public class Robot extends RobotBase {
+    private class UpdateIntakeInAutoAction implements Action {
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            if (!feedingMechanism.isSpindexerInPosition()) {
+                intake.stopIntake();
+            }
+            else {
+                intake.startIntake();
+            }
+            return true;
+        }
+    }
     public class LaunchAllArtifactsAction implements Action {
         private FeedingMechanism.SpindexerPosition[] shootingSequence;
         private boolean hasStarted = false;
@@ -234,13 +246,16 @@ public class Robot extends RobotBase {
                         new SleepAction(timeUntilBail),
                         new ParallelAction(
                                 intake.getStartIntakeAction(),
-                                new SequentialAction(
-                                        feedingMechanism.getMoveSpindexerAction(FeedingMechanism.SpindexerPosition.INTAKE_INDEX_0),
-                                        feedingMechanism.getScanCurrentArtifactAction(100),
-                                        feedingMechanism.getMoveSpindexerAction(FeedingMechanism.SpindexerPosition.INTAKE_INDEX_1),
-                                        feedingMechanism.getScanCurrentArtifactAction(100),
-                                        feedingMechanism.getMoveSpindexerAction(FeedingMechanism.SpindexerPosition.INTAKE_INDEX_2),
-                                        feedingMechanism.getScanCurrentArtifactAction(100)
+                                new RaceAction(
+                                        new SequentialAction(
+                                                feedingMechanism.getMoveSpindexerAction(FeedingMechanism.SpindexerPosition.INTAKE_INDEX_0),
+                                                feedingMechanism.getScanCurrentArtifactAction(100),
+                                                feedingMechanism.getMoveSpindexerAction(FeedingMechanism.SpindexerPosition.INTAKE_INDEX_1),
+                                                feedingMechanism.getScanCurrentArtifactAction(100),
+                                                feedingMechanism.getMoveSpindexerAction(FeedingMechanism.SpindexerPosition.INTAKE_INDEX_2),
+                                                feedingMechanism.getScanCurrentArtifactAction(100)
+                                        ),
+                                        new UpdateIntakeInAutoAction()
                                 )
                         )
                 ),
