@@ -159,7 +159,7 @@ public class DriverOpMode extends LinearOpMode {
                                 robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal())
                         ),
                         new RaceAction(
-                                robot.drive.getHoldHeadingAction(robot),
+//                                robot.drive.getHoldHeadingAction(robot),
                                 robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
                                 robot.getLaunchAllArtifactsAction()
                         ),
