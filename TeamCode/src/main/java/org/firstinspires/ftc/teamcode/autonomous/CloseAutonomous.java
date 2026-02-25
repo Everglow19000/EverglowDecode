@@ -81,11 +81,11 @@ public class CloseAutonomous {
                 .setTangent(0)
                 .splineToSplineHeading(new Pose2d(-11, -30 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90 * isBlueValue))
                 .splineTo(new Vector2d(-11, -50 * isBlueValue), Math.toRadians(-90 * isBlueValue), new TranslationalVelConstraint(12))
-                .strafeTo(new Vector2d(-18, -53), new TranslationalVelConstraint(20));
+                .strafeTo(new Vector2d(-18, -53 * isBlueValue), new TranslationalVelConstraint(20));
 
         TrajectoryActionBuilder b_MoveToCloseGate = b_MoveToArtifact1
                 .splineToSplineHeading(new Pose2d(-5, -52 * isBlueValue, Math.toRadians(90 * isBlueValue)), Math.toRadians(-45 * isBlueValue))
-                .strafeTo(new Vector2d(-5, -56))
+                .strafeTo(new Vector2d(-5, -56 * isBlueValue))
                 .waitSeconds(1);
 
         TrajectoryActionBuilder b_MoveToShootingPlace1 = b_MoveToCloseGate.endTrajectory().fresh()
