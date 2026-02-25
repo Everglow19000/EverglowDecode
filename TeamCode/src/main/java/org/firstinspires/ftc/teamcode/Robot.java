@@ -121,6 +121,7 @@ public class Robot extends RobotBase {
             usedLastPose = true;
         }
         camera = new Camera(hardwareMap, drive.localizer);
+        camera.isAuto = isAuto;
         intake = new Intake(hardwareMap);
         shooter = new Shooter(hardwareMap, this);
         feedingMechanism = new FeedingMechanism(hardwareMap, motif);
