@@ -131,6 +131,11 @@ public class FeedingMechanism implements Subsystem {
         SpindexerPosition position;
         boolean hasStartedFeeding = false;
         boolean hasStartedReturn = false;
+
+        // both in ms
+        double feedingStartTime;
+        static final double moveTime = 1000;
+        double returnStartTime;
         public FeedSingleArtifactAction(SpindexerPosition position) {
             this.position = position;
         }
@@ -139,12 +144,20 @@ public class FeedingMechanism implements Subsystem {
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
             if (!hasStartedFeeding) {
                 hasStartedFeeding = true;
+                feedingStartTime = System.currentTimeMillis();
                 setFeedingServoPosition(FeedingServoPosition.UP);
             }
-            if (hasStartedFeeding && !hasStartedReturn && isFeedingServoInPosition()) {
+            if (hasStartedFeeding && !hasStartedReturn && System.currentTimeMillis() - feedingStartTime >= moveTime) {
                 hasStartedReturn = true;
+                returnStartTime = System.currentTimeMillis();
                 setFeedingServoPosition(FeedingServoPosition.DOWN);
                 storedArtifacts[position.getSelectedArrayIndex()] = null;
+            }
+
+            if (hasStartedReturn && !isFeedingServoInPosition() && System.currentTimeMillis() - returnStartTime >= moveTime) {
+                setFeedingServoPosition(FeedingServoPosition.UP);
+                setSpindexerPosition(position);
+                hasStartedReturn = false;
             }
 
             return !(hasStartedReturn && isFeedingServoInPosition());

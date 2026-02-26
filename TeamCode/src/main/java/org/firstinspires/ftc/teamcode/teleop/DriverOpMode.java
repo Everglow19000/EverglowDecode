@@ -159,7 +159,7 @@ public class DriverOpMode extends LinearOpMode {
                                 robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal())
                         ),
                         new RaceAction(
-//                                robot.drive.getHoldHeadingAction(robot),
+                                robot.drive.getHoldHeadingAction(robot),
                                 robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
                                 robot.getLaunchAllArtifactsAction()
                         ),
@@ -221,7 +221,7 @@ public class DriverOpMode extends LinearOpMode {
                 shouldSpinUpShooter = !shouldSpinUpShooter;
             }
 
-            if (gamepad.wasJustPressed(GamepadKeys.Button.DPAD_UP) || loggerGamepad.wasJustPressed(GamepadKeys.Button.DPAD_UP)) {
+            if (gamepad.wasJustPressed(GamepadKeys.Button.DPAD_UP)) {
                 robot.setMotif(Robot.currentMotif.getNext());
             }
 

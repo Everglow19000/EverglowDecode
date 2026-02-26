@@ -26,8 +26,7 @@ public class close_test {
 
         Vector2d obeliskScanPosition = new Vector2d(-24, -18 * isBlueValue);
 
-        myBot.runAction(myBot.getDrive().actionBuilder(new Pose2d(-40, -54 * isBlueValue, Math.toRadians(90 * isBlueValue)))
-                .waitSeconds(8)
+        myBot.runAction(myBot.getDrive().actionBuilder(new Pose2d(-36, -52 * isBlueValue, Math.toRadians(90 * isBlueValue)))
                 // scan content, detect motif
                 .splineToSplineHeading(new Pose2d(obeliskScanPosition, Math.toRadians(150 * isBlueValue)), Math.toRadians(0)) // while doing this and the next action, spin up shooter, scan artifacts inside, and scan motif.
                 .turnTo(Math.toRadians(-135 * isBlueValue))

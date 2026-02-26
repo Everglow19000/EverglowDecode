@@ -139,7 +139,6 @@ public class Camera implements Subsystem{
 
     public Limelight3A limelight3A;
     private Localizer localizer;
-    public boolean isAuto = false;
 
     public boolean isUpdatePoseOnUpdate = true;
 
@@ -208,13 +207,13 @@ public class Camera implements Subsystem{
 
     @Override
     public void update(int iterationCount) {
-//        limelight3A.updateRobotOrientation(Math.toDegrees(localizer.getPose().heading.toDouble()));
+        limelight3A.updateRobotOrientation(Math.toDegrees(localizer.getPose().heading.toDouble()));
         LLResult result = limelight3A.getLatestResult();
         if (result.isValid()) {
             if (result.getPipelineIndex() != 1) {
                 limelight3A.pipelineSwitch(1);
             }
-            else if (isUpdatePoseOnUpdate && !isAuto) {
+            else if (isUpdatePoseOnUpdate) {
                 double x = result.getBotpose().getPosition().toUnit(DistanceUnit.INCH).x;
                 double y = result.getBotpose().getPosition().toUnit(DistanceUnit.INCH).y;
                 double heading = result.getBotpose().getOrientation().getYaw(AngleUnit.RADIANS);
