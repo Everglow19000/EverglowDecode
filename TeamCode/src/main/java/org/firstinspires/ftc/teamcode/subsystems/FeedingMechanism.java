@@ -22,7 +22,7 @@ import org.firstinspires.ftc.teamcode.everglow_library.Utils;
 import java.util.Arrays;
 
 public class FeedingMechanism implements Subsystem {
-    public static double artifactDistanceFromSensor1 = 34.5;
+    public static double artifactDistanceFromSensor1 = 33;
     public static double artifactDistanceFromSensor2 = 44.5;
     public static double analogInputMin = 0.05484;
     public static double analogInputMax = 0.94939;
@@ -485,19 +485,30 @@ public class FeedingMechanism implements Subsystem {
         Log.i("FeedingMechanism", "motif: " + motif);
 
         if (motif == Motif.NONE || motif == null) {
-            SpindexerPosition currIndexStored;
-            if (targetSpindexerPosition == SpindexerPosition.SHOOT_INDEX_0 || targetSpindexerPosition == SpindexerPosition.SHOOT_INDEX_1 || targetSpindexerPosition == SpindexerPosition.SHOOT_INDEX_2) {
-                currIndexStored = targetSpindexerPosition;
+            int[] purpleArtifactPositions = getArtifactColorPositions(ArtifactColor.PURPLE);
+            int[] greenArtifactPositions = getArtifactColorPositions(ArtifactColor.GREEN);
+            SpindexerPosition[] occupiedPositions = new SpindexerPosition[purpleArtifactPositions.length + greenArtifactPositions.length];
+            int index = 0;
+            for (int i = 0; i < purpleArtifactPositions.length; i++, index++) {
+                occupiedPositions[index] = SpindexerPosition.shootIndex(purpleArtifactPositions[i]);
             }
-            else {
-                currIndexStored = SpindexerPosition.SHOOT_INDEX_0;
+            for (int i = 0; i < greenArtifactPositions.length; i++, index++) {
+                occupiedPositions[index] = SpindexerPosition.shootIndex(greenArtifactPositions[i]);
             }
+
+            double currentPretendSpindexerPosition = getScaledSpindexerEncoderPosition();
             for (int i = 0; i < result.length; i++) {
-                while (storedArtifacts[currIndexStored.getSelectedArrayIndex()] == null) {
-                    currIndexStored = currIndexStored.getNext();
+                int minDistanceIndex = -1;
+                for (int j = 0; j < occupiedPositions.length; j++) {
+                    if (occupiedPositions[j] != null) {
+                        if (minDistanceIndex == -1 || Math.abs(currentPretendSpindexerPosition - occupiedPositions[j].position) < Math.abs(currentPretendSpindexerPosition - occupiedPositions[minDistanceIndex].position)) {
+                            minDistanceIndex = j;
+                        }
+                    }
                 }
-                result[i] = currIndexStored;
-                currIndexStored = currIndexStored.getNext();
+                result[i] = occupiedPositions[minDistanceIndex];
+                currentPretendSpindexerPosition = occupiedPositions[minDistanceIndex].position;
+                occupiedPositions[minDistanceIndex] = null;
             }
         }
         else {
@@ -693,19 +704,30 @@ public class FeedingMechanism implements Subsystem {
         SpindexerPosition[] result = new SpindexerPosition[countArtifactsInSpindexer(storedArtifacts)];
 
         if (motif == Motif.NONE || motif == null) {
-            SpindexerPosition currIndexStored;
-            if (currentSpindexerPosition == SpindexerPosition.SHOOT_INDEX_0 || currentSpindexerPosition == SpindexerPosition.SHOOT_INDEX_1 || currentSpindexerPosition == SpindexerPosition.SHOOT_INDEX_2) {
-                currIndexStored = currentSpindexerPosition;
+            int[] purpleArtifactPositions = getArtifactColorPositions(storedArtifacts, ArtifactColor.PURPLE);
+            int[] greenArtifactPositions = getArtifactColorPositions(storedArtifacts, ArtifactColor.GREEN);
+            SpindexerPosition[] occupiedPositions = new SpindexerPosition[purpleArtifactPositions.length + greenArtifactPositions.length];
+            int index = 0;
+            for (int i = 0; i < purpleArtifactPositions.length; i++, index++) {
+                occupiedPositions[index] = SpindexerPosition.shootIndex(purpleArtifactPositions[i]);
             }
-            else {
-                currIndexStored = SpindexerPosition.SHOOT_INDEX_0;
+            for (int i = 0; i < greenArtifactPositions.length; i++, index++) {
+                occupiedPositions[index] = SpindexerPosition.shootIndex(greenArtifactPositions[i]);
             }
+
+            double currentPretendSpindexerPosition = currentSpindexerPosition.position;
             for (int i = 0; i < result.length; i++) {
-                while (storedArtifacts[currIndexStored.getSelectedArrayIndex()] == ArtifactColor.NONE) {
-                    currIndexStored = currIndexStored.getNext();
+                int minDistanceIndex = -1;
+                for (int j = 0; j < occupiedPositions.length; j++) {
+                    if (occupiedPositions[j] != null) {
+                        if (minDistanceIndex == -1 || Math.abs(currentPretendSpindexerPosition - occupiedPositions[j].position) < Math.abs(currentPretendSpindexerPosition - occupiedPositions[minDistanceIndex].position)) {
+                            minDistanceIndex = j;
+                        }
+                    }
                 }
-                result[i] = currIndexStored;
-                currIndexStored = currIndexStored.getNext();
+                result[i] = occupiedPositions[minDistanceIndex];
+                currentPretendSpindexerPosition = occupiedPositions[minDistanceIndex].position;
+                occupiedPositions[minDistanceIndex] = null;
             }
         }
         else {

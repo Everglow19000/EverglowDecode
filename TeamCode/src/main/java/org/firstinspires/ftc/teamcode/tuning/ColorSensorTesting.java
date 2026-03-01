@@ -31,7 +31,9 @@ public class ColorSensorTesting extends LinearOpMode {
     public static double greenGreenValue = ArtifactColor.GREEN.color[1];
     public static double greenBlueValue = ArtifactColor.GREEN.color[2];
     public static int spindexerPosition = 0;
-    public static double maxDistance = FeedingMechanism.artifactDistanceFromSensor1;
+    public static double maxDistance1 = FeedingMechanism.artifactDistanceFromSensor1;
+    public static double maxDistance2 = FeedingMechanism.artifactDistanceFromSensor2;
+
 
     private ArtifactColor matchColor(NormalizedRGBA rgba) {
         double[] lastColorArray = ArtifactColor.NormalizedRGBAToArray(rgba);
@@ -66,10 +68,11 @@ public class ColorSensorTesting extends LinearOpMode {
         ArtifactColor matchedColor = null;
 
         while (opModeIsActive()) {
-            FeedingMechanism.artifactDistanceFromSensor1 = maxDistance;
+            FeedingMechanism.artifactDistanceFromSensor1 = maxDistance1;
+            FeedingMechanism.artifactDistanceFromSensor2 = maxDistance2;
             double distance1 = colorSensor1.getDistance(DistanceUnit.MM);
             double distance2 = colorSensor2.getDistance(DistanceUnit.MM);
-            if (distance1 <= FeedingMechanism.artifactDistanceFromSensor1 || distance2 <= FeedingMechanism.artifactDistanceFromSensor1) {
+            if (distance1 <= FeedingMechanism.artifactDistanceFromSensor1 || distance2 <= FeedingMechanism.artifactDistanceFromSensor2) {
                 if (distance1 <= FeedingMechanism.artifactDistanceFromSensor1) {
                     currentColor = colorSensor1.getNormalizedColors();
                 }
@@ -85,7 +88,7 @@ public class ColorSensorTesting extends LinearOpMode {
 
             telemetry.addData("distance1", distance1);
             telemetry.addData("distance2", distance2);
-            if (distance1 <= FeedingMechanism.artifactDistanceFromSensor1 || distance2 <= FeedingMechanism.artifactDistanceFromSensor1) {
+            if (distance1 <= FeedingMechanism.artifactDistanceFromSensor1 || distance2 <= FeedingMechanism.artifactDistanceFromSensor2) {
                 if (currentColor != null) {
                     matchedColor = matchColor(currentColor);
                 }

@@ -30,6 +30,8 @@ public class DriverOpMode extends LinearOpMode {
     public static double holdHeadingD = MecanumDrive.holdHeadingD;
     Robot robot;
     int iterations;
+    Motif actualMotif;
+    boolean usingActualMotif = true;
 
     public class UpdateRobotPoseAction implements Action {
         double[] pose;
@@ -168,7 +170,7 @@ public class DriverOpMode extends LinearOpMode {
                 );
             }
 
-            else if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)) {
+            else if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.SQUARE)) {
                 driveAvailable = false;
                 spindexerAvailable = false;
                 shooterAvailable = false;
@@ -182,14 +184,22 @@ public class DriverOpMode extends LinearOpMode {
                         robot.getStopShooterAction()
                 );
             }
-//            else if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.SQUARE)) {
+            else if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)) {
+                gamepad.gamepad.runRumbleEffect(endGenericActionRumble);
+                if (usingActualMotif) {
+                    robot.setMotif(Motif.NONE);
+                }
+                else {
+                    robot.setMotif(actualMotif);
+                }
+                usingActualMotif = !usingActualMotif;
 //                driveAvailable = false;
 //                currentRumble = endCameraActionRumble;
 //                currentAction = new SequentialAction(
 //                        robot.getLocalizeWithApriltagAction(position, false),
 //                        new UpdateRobotPoseAction(robot, position)
 //                );
-//            }
+            }
             else if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.TRIANGLE)) {
                 spindexerAvailable = false;
                 currentRumble = endSpindexerActionRumble;
