@@ -50,12 +50,13 @@ public class Robot extends RobotBase {
                 hasStarted = true;
 
                 shootingSequence = feedingMechanism.getShootingSequence();
+                double myTimeBetweenShots = currentMotif == Motif.NONE || currentMotif == null ? 0 : Robot.timeBetweenShootsMS/1000;
                 if (shootingSequence.length != 0) {
                     action = new SequentialAction(
                             feedingMechanism.getMoveSpindexerAction(shootingSequence[0]),
                             new ParallelAction(
                                     shooter.getWaitUntilShooterSpinupAction(),
-                                    new SleepAction(Robot.timeBetweenShootsMS/1000)
+                                    new SleepAction(myTimeBetweenShots)
                             ),
                             feedingMechanism.getFeedSingleArtifactAction(shootingSequence[0])
                     );
@@ -65,7 +66,7 @@ public class Robot extends RobotBase {
                                 feedingMechanism.getMoveSpindexerAction(shootingSequence[i]),
                                 new ParallelAction(
                                         shooter.getWaitUntilShooterSpinupAction(),
-                                        new SleepAction(Robot.timeBetweenShootsMS/1000)
+                                        new SleepAction(myTimeBetweenShots)
                                 ),
                                 feedingMechanism.getFeedSingleArtifactAction(shootingSequence[i])
                         );
