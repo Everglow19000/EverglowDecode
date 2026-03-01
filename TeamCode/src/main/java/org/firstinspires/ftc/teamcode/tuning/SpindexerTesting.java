@@ -35,7 +35,7 @@ public class SpindexerTesting extends LinearOpMode {
         feedingServo.setDirection(Servo.Direction.REVERSE);
 
         Servo spindexerServo = hardwareMap.get(Servo.class, "spindexerServo");
-        Utils.setServoPWMRange(spindexerServo, 510, 2490);
+//        Utils.setServoPWMRange(spindexerServo, 510, 2490);
 
         Motif[] motifs = new Motif[4];
         motifs[0] = Motif.NONE;
@@ -43,10 +43,11 @@ public class SpindexerTesting extends LinearOpMode {
         motifs[2] = Motif.GPP;
         motifs[3] = Motif.PPG;
 
-        ArtifactColor[] artifactColors = new ArtifactColor[3];
-        artifactColors[0] = ArtifactColor.NONE;
-        artifactColors[1] = ArtifactColor.PURPLE;
-        artifactColors[2] = ArtifactColor.GREEN;
+        ArtifactColor[] artifactColors = new ArtifactColor[4];
+        artifactColors[0] = null;
+        artifactColors[1] = ArtifactColor.NONE;
+        artifactColors[2] = ArtifactColor.PURPLE;
+        artifactColors[3] = ArtifactColor.GREEN;
 
         FeedingMechanism.SpindexerPosition[] spindexerPositions = new FeedingMechanism.SpindexerPosition[3];
         spindexerPositions[0] = FeedingMechanism.SpindexerPosition.SHOOT_INDEX_0;

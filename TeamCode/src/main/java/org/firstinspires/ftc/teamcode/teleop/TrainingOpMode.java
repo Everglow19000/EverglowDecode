@@ -27,6 +27,8 @@ public class TrainingOpMode extends LinearOpMode {
     public static double holdHeadingD = MecanumDrive.holdHeadingD;
     Robot robot;
     int iterations;
+    Motif[] motifList = new Motif[4];
+    int motifIndex = 0;
 
     public class UpdateRobotPoseAction implements Action {
         double[] pose;
@@ -66,6 +68,10 @@ public class TrainingOpMode extends LinearOpMode {
             isBlue = (boolean) isBlueObject;
         }
         robot = new Robot(hardwareMap, isBlue, false, Motif.NONE);
+        motifList[0] = Motif.NONE;
+        motifList[1] = Motif.GPP;
+        motifList[2] = Motif.PGP;
+        motifList[3] = Motif.PPG;
 
         boolean driveAvailable = true;
         boolean shooterAvailable = true;
@@ -109,8 +115,9 @@ public class TrainingOpMode extends LinearOpMode {
                 );
             }
             else if (gamepad.wasJustPressed(GamepadKeys.Button.SQUARE)) {
-                driveAvailable = false;
-                currentAction = robot.getMotifFromObeliskAction(motifs);
+                motifIndex++;
+                motifIndex = motifIndex % motifList.length;
+                robot.setMotif(motifList[motifIndex]);
             }
             else if (gamepad.wasJustPressed(GamepadKeys.Button.TRIANGLE)) {
                 spindexerAvailable = false;
@@ -154,6 +161,7 @@ public class TrainingOpMode extends LinearOpMode {
             telemetry.addData("feeding mechanism intaking", robot.feedingMechanism.isIntaking());
             telemetry.addData("contents", robot.getFeedingMechanismContents());
             telemetry.addData("position", robot.drive.localizer.getPose().position);
+            telemetry.addData("motif", Robot.currentMotif);
             telemetry.update();
         }
     }
