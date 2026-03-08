@@ -43,6 +43,7 @@ import com.seattlesolvers.solverslib.controller.PIDFController;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+import org.firstinspires.ftc.teamcode.everglow_library.RotationSquIDFController;
 import org.firstinspires.ftc.teamcode.everglow_library.Utils;
 import org.firstinspires.ftc.teamcode.messages.DriveCommandMessage;
 import org.firstinspires.ftc.teamcode.messages.MecanumCommandMessage;
@@ -95,8 +96,8 @@ public final class MecanumDrive {
     }
 
     public static Params PARAMS = new Params();
-    public static double holdHeadingP = 0.75;
-    public static double holdHeadingD = 0.05;
+    public static double holdHeadingP = 0.83;
+    public static double holdHeadingD = 0.08;
 
     public final MecanumKinematics kinematics = new MecanumKinematics(
             PARAMS.inPerTick * PARAMS.trackWidthTicks, PARAMS.inPerTick / PARAMS.lateralInPerTick);
@@ -458,18 +459,19 @@ public final class MecanumDrive {
 
     public final class HoldHeadingAction implements Action {
         Robot robot;
-        PIDController controller;
+        RotationSquIDFController controller;
         private HoldHeadingAction(Robot robot) {
             this.robot = robot;
-            controller = new PIDController(holdHeadingP, 0, holdHeadingD);
+            controller = new RotationSquIDFController(holdHeadingP, 0, holdHeadingD, 0);
         }
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
             robot.update();
+            double angVel = controller.calculate(localizer.getPose().heading.toDouble(), robot.getOptimalAngleToShoot().toDouble());
             setDrivePowers(
                     new PoseVelocity2d(
-                            new Vector2d(0,0),
-                            controller.calculate(localizer.getPose().heading.toDouble(), robot.getOptimalAngleToShoot().toDouble())
+                            new Vector2d(0, 0),
+                            Math.signum(angVel)*Math.sqrt(Math.abs(angVel))
                     )
             );
             return true;
