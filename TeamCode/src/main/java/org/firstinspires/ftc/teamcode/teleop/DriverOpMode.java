@@ -47,6 +47,19 @@ public class DriverOpMode extends LinearOpMode {
         }
     }
 
+    public class UpdateShooterUseFakeDistanceAction implements Action {
+        boolean newValue;
+        public UpdateShooterUseFakeDistanceAction(boolean newValue) {
+            this.newValue = newValue;
+        }
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            robot.shooter.useFakeDistance = newValue;
+            return false;
+        }
+    }
+
     Gamepad.RumbleEffect endGenericActionRumble = new Gamepad.RumbleEffect.Builder()
             .addStep(0.75, 0.75, 125)
             .addStep(0.25, 0.25, 125)
@@ -174,11 +187,13 @@ public class DriverOpMode extends LinearOpMode {
                 shooterAvailable = false;
                 currentRumble = endShootActionRumble;
                 currentAction = new SequentialAction(
+                        new UpdateShooterUseFakeDistanceAction(true),
                         robot.drive.getStopMovingAction(),
                         new RaceAction(
                                 robot.getSpinUpShooterAction(robot.calculateDistanceFromGoal()),
                                 robot.getLaunchAllArtifactsAction()
                         ),
+                        new UpdateShooterUseFakeDistanceAction(false),
                         robot.getStopShooterAction()
                 );
             }
