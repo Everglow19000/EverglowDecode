@@ -10,6 +10,7 @@ import com.seattlesolvers.solverslib.controller.PIDFController;
 import com.seattlesolvers.solverslib.hardware.motors.Motor;
 import com.seattlesolvers.solverslib.hardware.motors.MotorEx;
 import com.seattlesolvers.solverslib.util.InterpLUT;
+import com.seattlesolvers.solverslib.util.LUT;
 
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.everglow_library.Subsystem;
@@ -28,6 +29,21 @@ public class Shooter implements Subsystem {
             118.9,
             149.4
     };
+
+    private static InterpLUT artifactAirTimesLUT = Utils.interpLUTFromArrays( //TODO: FILL ME WITH MEASURED VALUES
+            LUTsDistances,
+            new double[]{
+                    -1,
+                    -1,
+                    -1,
+                    -1,
+                    -1,
+                    -1,
+                    -1,
+                    -1,
+                    -1
+            }
+    );
 
     // --------------------
     // | Servo Parameters |

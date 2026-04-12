@@ -275,6 +275,7 @@ public class Robot extends RobotBase {
             return distanceCache;
         }
 
+        
         double cameraDistance = camera.getDistanceFromAprilTag(isBlue);
         Vector2d diff = goalPoseDistance.minus(drive.localizer.getPose().position);
         double positionDistance = Math.sqrt(Math.pow(diff.x, 2) + Math.pow(diff.y, 2));
