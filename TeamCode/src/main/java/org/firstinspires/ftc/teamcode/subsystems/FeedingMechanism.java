@@ -22,8 +22,8 @@ import org.firstinspires.ftc.teamcode.everglow_library.Utils;
 import java.util.Arrays;
 
 public class FeedingMechanism implements Subsystem {
-    public static double artifactDistanceFromSensor1 = 33;
-    public static double artifactDistanceFromSensor2 = 44.5;
+    public static double artifactDistanceFromSensor1 = 30.5;
+    public static double artifactDistanceFromSensor2 = 46.5;
     public static double analogInputMin = 0.05484;
     public static double analogInputMax = 0.94939;
     public static double spindexerEncoderTolerance = 0.005;

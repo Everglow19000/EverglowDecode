@@ -111,7 +111,7 @@ public class CloseAutonomous {
                         new DeferredAction(() -> robot.getOrientRobotForShootAction())
                 ),
                 new SequentialAction(
-                        robot.getMotifFromObeliskAction(motifHolder, 2000),
+                        robot.getMotifFromObeliskAction(motifHolder, 3500),
                         actions.getUpdateMotifAction(motifHolder)
                 ),
                 robot.getScanArtifactColorsAction()

@@ -62,7 +62,13 @@ public class Camera implements Subsystem{
                 motifWrapper[0] = Motif.NONE;
             }
 
-            return !isFinished && (System.currentTimeMillis() - startTime) <= timeUntilBail;
+            boolean returnCondition = !isFinished && (System.currentTimeMillis() - startTime) <= timeUntilBail;
+
+            if (!returnCondition) {
+                Log.i("hi", motifWrapper[0].toString());
+            } // probably does not work if deleted
+
+            return returnCondition;
         }
     }
 
