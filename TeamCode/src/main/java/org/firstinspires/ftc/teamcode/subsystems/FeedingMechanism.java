@@ -409,10 +409,12 @@ public class FeedingMechanism implements Subsystem {
         return false;
     }
     public void setSpindexerPosition(SpindexerPosition position) {
-        if (position != targetSpindexerPosition) {
-            lastTargetSpindexerPosition = targetSpindexerPosition;
-            targetSpindexerPosition = position;
-            spindexerServo.setPosition(position.position);
+        if (position != null) {
+            if (position != targetSpindexerPosition) {
+                lastTargetSpindexerPosition = targetSpindexerPosition;
+                targetSpindexerPosition = position;
+                spindexerServo.setPosition(position.position);
+            }
         }
     }
     public void setFeedingServoPosition(FeedingServoPosition position) {
