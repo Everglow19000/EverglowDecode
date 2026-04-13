@@ -249,9 +249,6 @@ public class DriverOpMode extends LinearOpMode {
             if (gamepad.wasJustPressed(GamepadKeys.Button.DPAD_UP)) {
                 robot.setMotif(Robot.currentMotif.getNext());
             }
-            else if (gamepad.wasJustPressed(GamepadKeys.Button.SQUARE)) {
-                robot.setMotif(Motif.NONE);
-            }
 
             if (spindexerAvailable && gamepad.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT)) {
                 spindexerPosesIndex++;

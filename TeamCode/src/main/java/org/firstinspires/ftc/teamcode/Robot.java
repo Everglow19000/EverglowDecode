@@ -106,6 +106,9 @@ public class Robot extends RobotBase {
     private double distanceCache = -1;
     private int distanceCacheIteration = 0;
     public Robot(HardwareMap hardwareMap, boolean isBlue, boolean isAuto, Motif motif) {
+        if (motif == null) {
+            motif = Motif.NONE;
+        }
         goalEdge1 = new Vector2d(goalEdge1Static.x, goalEdge1Static.y*(isBlue ? 1 : -1));
         goalEdge2 = new Vector2d(goalEdge2Static.x, goalEdge2Static.y*(isBlue ? 1 : -1));
         goalPoseDistance = new Vector2d(goalPoseDistanceStatic.x, goalPoseDistanceStatic.y*(isBlue ? 1 : -1));
