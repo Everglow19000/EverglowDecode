@@ -48,13 +48,6 @@ public class CloseAutonomous {
         Robot robot = new Robot(opMode.hardwareMap, isBlue, true, Motif.NONE);
         opMode.telemetry = new MultipleTelemetry(opMode.telemetry, FtcDashboard.getInstance().getTelemetry());
 
-        while (opMode.opModeInInit() && !opMode.isStopRequested()) {
-            robot.camera.start();
-            robot.camera.setPipeline(1);
-            opMode.telemetry.addData("current camera reading", robot.camera.status());
-            opMode.telemetry.update();
-        }
-
         robot.drive.localizer.setPose(new Pose2d(-36, -52 * isBlueValue, Math.toRadians(90 * isBlueValue)));
 
         opMode.waitForStart();
@@ -79,25 +72,26 @@ public class CloseAutonomous {
 
         TrajectoryActionBuilder b_MoveToArtifact1 = b_MoveToScanObelisk.endTrajectory().fresh()
                 .setTangent(0)
-                .splineToSplineHeading(new Pose2d(-11, -30 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90 * isBlueValue))
+                .splineToSplineHeading(new Pose2d(-11, -25 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90 * isBlueValue))
                 .splineTo(new Vector2d(-11, -50 * isBlueValue), Math.toRadians(-90 * isBlueValue), new TranslationalVelConstraint(12))
                 .strafeTo(new Vector2d(-18, -53 * isBlueValue), new TranslationalVelConstraint(20));
 
-        TrajectoryActionBuilder b_MoveToCloseGate = b_MoveToArtifact1
-                .splineToSplineHeading(new Pose2d(-5, -52 * isBlueValue, Math.toRadians(90 * isBlueValue)), Math.toRadians(-45 * isBlueValue))
-                .strafeTo(new Vector2d(-5, -56 * isBlueValue))
-                .waitSeconds(1);
+//        TrajectoryActionBuilder b_MoveToCloseGate = b_MoveToArtifact1
+//                .splineToSplineHeading(new Pose2d(-5, -52 * isBlueValue, Math.toRadians(90 * isBlueValue)), Math.toRadians(-45 * isBlueValue))
+//                .strafeTo(new Vector2d(-5, -56 * isBlueValue))
+//                .waitSeconds(1);
 
-        TrajectoryActionBuilder b_MoveToShootingPlace1 = b_MoveToCloseGate.endTrajectory().fresh()
+        TrajectoryActionBuilder b_MoveToShootingPlace1 = b_MoveToArtifact1.endTrajectory().fresh()
                 .setTangent(Math.PI/2)
                 .splineToSplineHeading(new Pose2d(obeliskScanPosition, Math.toRadians(-135 * isBlueValue)), Math.toRadians(135 * isBlueValue));
 
         TrajectoryActionBuilder b_MoveToArtifact2 = b_MoveToShootingPlace1.endTrajectory().fresh()
                 .setTangent(0)
-                .splineToSplineHeading(new Pose2d(12, -30 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90 * isBlueValue))
-                .splineTo(new Vector2d(12, -50 * isBlueValue), Math.toRadians(-90 * isBlueValue), new TranslationalVelConstraint(7));
+                .splineToSplineHeading(new Pose2d(6, -25 * isBlueValue, Math.toRadians(-90 * isBlueValue)), Math.toRadians(-90 * isBlueValue))
+                .strafeTo(new Vector2d(6, -65 * isBlueValue), new TranslationalVelConstraint(12));
 
-        TrajectoryActionBuilder b_MoveToShootingPlace2 = b_MoveToArtifact2
+        TrajectoryActionBuilder b_MoveToShootingPlace2 = b_MoveToArtifact2.endTrajectory().fresh()
+                .setTangent(Math.PI/2)
                 .splineToSplineHeading(new Pose2d(obeliskScanPosition, Math.toRadians(-135 * isBlueValue)), Math.toRadians(135 * isBlueValue));
 
 
@@ -111,7 +105,7 @@ public class CloseAutonomous {
                         new DeferredAction(() -> robot.getOrientRobotForShootAction())
                 ),
                 new SequentialAction(
-                        robot.getMotifFromObeliskAction(motifHolder, 2000),
+                        robot.getMotifFromObeliskAction(motifHolder, 3500),
                         actions.getUpdateMotifAction(motifHolder)
                 ),
                 robot.getScanArtifactColorsAction()
@@ -134,7 +128,7 @@ public class CloseAutonomous {
 
         Action MoveToArtifact2 = new ParallelAction(
                 b_MoveToArtifact2.build(),
-                robot.getIntakeThreeAction(4.5)
+                robot.getIntakeThreeAction(5.5)
         );
 
         Action MoveToShootingPlace2 = new SequentialAction(

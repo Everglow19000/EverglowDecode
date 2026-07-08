@@ -27,6 +27,7 @@ public class AutonomousActions {
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
             robot.setMotif(motifs[0]);
+            Log.i("hello", motifs[0].toString()); // probably does not work if deleted
             return false;
         }
     }

@@ -50,12 +50,13 @@ public class Robot extends RobotBase {
                 hasStarted = true;
 
                 shootingSequence = feedingMechanism.getShootingSequence();
+                double myTimeBetweenShots = currentMotif == Motif.NONE || currentMotif == null ? 0 : Robot.timeBetweenShootsMS/1000;
                 if (shootingSequence.length != 0) {
                     action = new SequentialAction(
                             feedingMechanism.getMoveSpindexerAction(shootingSequence[0]),
                             new ParallelAction(
                                     shooter.getWaitUntilShooterSpinupAction(),
-                                    new SleepAction(Robot.timeBetweenShootsMS/1000)
+                                    new SleepAction(myTimeBetweenShots)
                             ),
                             feedingMechanism.getFeedSingleArtifactAction(shootingSequence[0])
                     );
@@ -65,7 +66,7 @@ public class Robot extends RobotBase {
                                 feedingMechanism.getMoveSpindexerAction(shootingSequence[i]),
                                 new ParallelAction(
                                         shooter.getWaitUntilShooterSpinupAction(),
-                                        new SleepAction(Robot.timeBetweenShootsMS/1000)
+                                        new SleepAction(myTimeBetweenShots)
                                 ),
                                 feedingMechanism.getFeedSingleArtifactAction(shootingSequence[i])
                         );
@@ -105,6 +106,9 @@ public class Robot extends RobotBase {
     private double distanceCache = -1;
     private int distanceCacheIteration = 0;
     public Robot(HardwareMap hardwareMap, boolean isBlue, boolean isAuto, Motif motif) {
+        if (motif == null) {
+            motif = Motif.NONE;
+        }
         goalEdge1 = new Vector2d(goalEdge1Static.x, goalEdge1Static.y*(isBlue ? 1 : -1));
         goalEdge2 = new Vector2d(goalEdge2Static.x, goalEdge2Static.y*(isBlue ? 1 : -1));
         goalPoseDistance = new Vector2d(goalPoseDistanceStatic.x, goalPoseDistanceStatic.y*(isBlue ? 1 : -1));

@@ -24,6 +24,6 @@ public enum Motif {
         else if (this == PPG) {
             return PGP;
         }
-        return this;
+        return GPP;
     }
 }

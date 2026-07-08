@@ -139,6 +139,9 @@ public class Shooter implements Subsystem {
     public double desiredFlywheelSpeed = 0; // [ticks/s]
     private double targetServoPosition = 0;
 
+    public boolean useFakeDistance = false;
+    public float fakeDistance = 60;
+
 
     public Shooter(HardwareMap hardwareMap, Robot robot) {
         this.robot = robot;
@@ -158,10 +161,10 @@ public class Shooter implements Subsystem {
     }
 
     public double getFlywheelTicksPerSecondForDistanceFromGoal(double distance) {
-        return flywheelSpeedsLUT.get(clampDistance(distance));
+        return flywheelSpeedsLUT.get(clampDistance(useFakeDistance ? fakeDistance : distance));
     }
     public double getServoAngleForDistanceFromGoal(double distance) {
-        return servoAnglesLUT.get(clampDistance(distance));
+        return servoAnglesLUT.get(clampDistance(useFakeDistance ? fakeDistance : distance));
     }
 
 
