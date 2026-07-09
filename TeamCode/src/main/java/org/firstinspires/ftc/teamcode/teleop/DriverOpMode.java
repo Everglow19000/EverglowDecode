@@ -8,7 +8,6 @@ import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.RaceAction;
 import com.acmerobotics.roadrunner.SequentialAction;
-import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.seattlesolvers.solverslib.gamepad.GamepadEx;
@@ -71,9 +70,13 @@ public class DriverOpMode extends LinearOpMode {
     Gamepad.RumbleEffect endShootActionRumble = new Gamepad.RumbleEffect.Builder()
             .addStep(1, 1, 500)
             .build();
+
+    Gamepad.RumbleEffect intakeSingleArtifactRumble = new Gamepad.RumbleEffect.Builder()
+            .addStep(0.75, 0.75, 100)
+            .build();
     Gamepad.RumbleEffect endSpindexerActionRumble = new Gamepad.RumbleEffect.Builder()
-            .addStep(0.25, 0.25, 250)
-            .addStep(0.5, 0.5, 250)
+            .addStep(0.75, 0.75, 250)
+            .addStep(1, 1, 250)
             .build();
     Gamepad.RumbleEffect endCameraActionRumble = new Gamepad.RumbleEffect.Builder()
             .addStep(1, 0, 250)
@@ -81,6 +84,8 @@ public class DriverOpMode extends LinearOpMode {
             .build();
 
     Gamepad.RumbleEffect currentRumble;
+
+    int lastUpdateArtifactsStored;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -130,6 +135,7 @@ public class DriverOpMode extends LinearOpMode {
             robot.drive.localizer.setPose(new Pose2d(position[0], position[1], position[2]));
         }
 
+        lastUpdateArtifactsStored = robot.feedingMechanism.countArtifactsInSpindexer();
 
         while (opModeIsActive()) {
             robot.update();
@@ -160,6 +166,9 @@ public class DriverOpMode extends LinearOpMode {
             if (robot.feedingMechanism.isNowStoppedIntaking()) {
                 gamepad.gamepad.runRumbleEffect(endSpindexerActionRumble);
                 shouldSpinUpShooter = true;
+            }
+            else if (robot.isIntaking() && lastUpdateArtifactsStored < robot.feedingMechanism.countArtifactsInSpindexer()) {
+                gamepad.gamepad.runRumbleEffect(intakeSingleArtifactRumble);
             }
 
             if (currentAction == null && gamepad.wasJustPressed(GamepadKeys.Button.CROSS)) {
@@ -268,7 +277,7 @@ public class DriverOpMode extends LinearOpMode {
             }
 
 
-
+            lastUpdateArtifactsStored = robot.feedingMechanism.countArtifactsInSpindexer();
 
 
             if (gamepad.wasJustPressed(GamepadKeys.Button.CIRCLE)) {

@@ -347,7 +347,7 @@ public class FeedingMechanism implements Subsystem {
             return false;
         }
     }
-    public boolean isIntaking() {
+        public boolean isIntaking() {
         return isIntaking;
     }
 
@@ -448,7 +448,7 @@ public class FeedingMechanism implements Subsystem {
         return lastTargetSpindexerPosition;
     }
 
-    private int countArtifactsInSpindexer() {
+    public int countArtifactsInSpindexer() {
         int sum = 0;
         for (int i = 0; i < storedArtifacts.length; i++) {
             if (storedArtifacts[i] != null) {
